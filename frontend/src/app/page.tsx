@@ -62,12 +62,18 @@ export default function Home() {
           </form>
         </div>
 
-        <div className="bg-gray-50 p-4 text-center border-t border-gray-100">
+        <div className="bg-gray-50 p-4 text-center border-t border-gray-100 flex flex-col gap-2">
           <button
             onClick={() => router.push('/presenter/login')}
             className="text-sm text-gray-500 font-medium hover:text-gray-900 transition-colors"
           >
             I am a Speaker (Presenter Login)
+          </button>
+          <button
+            onClick={() => router.push('/admin/users')}
+            className="text-xs text-blue-500 font-medium hover:text-blue-700 transition-colors"
+          >
+            Open Admin Portal
           </button>
         </div>
       </motion.div>
