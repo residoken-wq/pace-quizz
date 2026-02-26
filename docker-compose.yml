@@ -61,7 +61,7 @@ services:
     # ports:
     #   - "3000:3000" # NPM Proxy: http://pace_quizz_frontend:3000
     environment:
-      - NEXT_PUBLIC_API_URL=https://quizz.pace.edu.vn # TODO: Đổi tên miền backend thực tế
+      - NEXT_PUBLIC_API_URL=https://api.quizz.pace.edu.vn # TODO: Đổi tên miền backend thực tế
     depends_on:
       - backend
     networks:
