@@ -1,1 +1,5 @@
-export class CreateSessionDto {}
+export class CreateSessionDto {
+    name: string;
+    hostId: string;
+    type?: 'LIVE' | 'SURVEY';
+}

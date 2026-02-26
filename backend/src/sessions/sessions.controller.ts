@@ -5,7 +5,7 @@ import { UpdateSessionDto } from './dto/update-session.dto';
 
 @Controller('sessions')
 export class SessionsController {
-  constructor(private readonly sessionsService: SessionsService) {}
+  constructor(private readonly sessionsService: SessionsService) { }
 
   @Post()
   create(@Body() createSessionDto: CreateSessionDto) {
@@ -17,18 +17,23 @@ export class SessionsController {
     return this.sessionsService.findAll();
   }
 
+  @Get('pin/:pin')
+  findByPin(@Param('pin') pin: string) {
+    return this.sessionsService.findByPin(pin);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.sessionsService.findOne(+id);
+    return this.sessionsService.findOne(id);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateSessionDto: UpdateSessionDto) {
-    return this.sessionsService.update(+id, updateSessionDto);
+    return this.sessionsService.update(id, updateSessionDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.sessionsService.remove(+id);
+    return this.sessionsService.remove(id);
   }
 }
