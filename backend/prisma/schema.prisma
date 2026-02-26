@@ -1,0 +1,95 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(uuid())
+  email     String    @unique
+  name      String?
+  password  String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  sessions  Session[]
+}
+
+model Session {
+  id           String        @id @default(uuid())
+  name         String
+  pin          String        @unique @db.VarChar(6)
+  type         SessionType   @default(LIVE) // LIVE synchronous or SURVEY asynchronous
+  status       SessionStatus @default(CREATED)
+  hostId       String
+  host         User          @relation(fields: [hostId], references: [id])
+  questions    Question[]
+  participants Participant[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+enum SessionType {
+  LIVE
+  SURVEY
+}
+
+enum SessionStatus {
+  CREATED
+  ACTIVE
+  FINISHED
+}
+
+model Participant {
+  id        String     @id @default(uuid())
+  sessionId String
+  session   Session    @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  nickname  String?
+  createdAt DateTime   @default(now())
+  responses Response[]
+
+  @@unique([sessionId, nickname])
+}
+
+model Question {
+  id        String       @id @default(uuid())
+  sessionId String
+  session   Session      @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  title     String
+  order     Int
+  type      QuestionType @default(MULTIPLE_CHOICE)
+  options   Json // e.g. [{id: "1", text: "Option A"}]
+  timeLimit Int? // limit in seconds, for LIVE mode
+  tags      Tag[]        @relation("QuestionTags")
+  responses Response[]
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  WORD_CLOUD
+  RATING_SCALE
+}
+
+model Tag {
+  id        String     @id @default(uuid())
+  name      String     @unique // e.g. "Awareness", "Mindset"
+  questions Question[] @relation("QuestionTags")
+}
+
+model Response {
+  id            String      @id @default(uuid())
+  participantId String
+  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  questionId    String
+  question      Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answer        Json // Stores the selected optionIds or text
+  score         Int? // For behavioral scoring
+  createdAt     DateTime    @default(now())
+}

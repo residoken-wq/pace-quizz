@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: pace_quizz_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-pace_quizz}
+    # ports:
+    #   - "5432:5432" # Đóng port host để tránh đụng với Postgres VPS
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - default
+      - proxy_net
+      - nexus-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: pace_quizz_redis
+    restart: always
+    # ports:
+    #   - "6379:6379" # Đóng port host để tránh đụng với Redis VPS
+    volumes:
+      - redis_data:/data
+    networks:
+      - default
+      - proxy_net
+      - nexus-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: pace_quizz_backend
+    restart: always
+    # ports:
+    #   - "3001:3001" # NPM Proxy: http://pace_quizz_backend:3001
+    environment:
+      - PORT=3001
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-pace_quizz}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - db
+      - redis
+    networks:
+      - default
+      - proxy_net
+      - nexus-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: pace_quizz_frontend
+    restart: always
+    # ports:
+    #   - "3000:3000" # NPM Proxy: http://pace_quizz_frontend:3000
+    environment:
+      - NEXT_PUBLIC_API_URL=https://api.tuydomain.com # TODO: Đổi tên miền backend thực tế
+    depends_on:
+      - backend
+    networks:
+      - default
+      - proxy_net
+      - nexus-network
+
+volumes:
+  db_data:
+  redis_data:
+
+
+networks:
+  default:
+  proxy_net:
+    external: true
+  nexus-network:
+    external: true
