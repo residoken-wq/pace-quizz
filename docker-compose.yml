@@ -47,6 +47,7 @@ services:
     depends_on:
       - db
       - redis
+    command: /bin/sh -c "npx prisma db push && npm run start:prod"
     networks:
       - default
       - proxy_net
