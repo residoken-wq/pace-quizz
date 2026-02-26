@@ -63,7 +63,10 @@ export default function Home() {
         </div>
 
         <div className="bg-gray-50 p-4 text-center border-t border-gray-100">
-          <button className="text-sm text-gray-500 font-medium hover:text-gray-900 transition-colors">
+          <button
+            onClick={() => router.push('/presenter/login')}
+            className="text-sm text-gray-500 font-medium hover:text-gray-900 transition-colors"
+          >
             I am a Speaker (Presenter Login)
           </button>
         </div>
