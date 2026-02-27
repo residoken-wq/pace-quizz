@@ -5,8 +5,6 @@ services:
     image: postgres:15-alpine
     container_name: pace_quizz_db
     restart: always
-    env_file:
-      - ./backend/.env
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
@@ -39,6 +37,8 @@ services:
       dockerfile: Dockerfile
     container_name: pace_quizz_backend
     restart: always
+    env_file:
+      - ./backend/.env
     # ports:
     #   - "3001:3001" # NPM Proxy: http://pace_quizz_backend:3001
     environment:
