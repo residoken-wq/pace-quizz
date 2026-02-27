@@ -9,9 +9,9 @@ export declare class QuestionsService {
         createdAt: Date;
         updatedAt: Date;
         type: import(".prisma/client").$Enums.QuestionType;
+        order: number;
         sessionId: string;
         title: string;
-        order: number;
         options: import("@prisma/client/runtime/library").JsonValue;
         timeLimit: number | null;
     }, never, import("@prisma/client/runtime/library").DefaultArgs>;
@@ -31,9 +31,9 @@ export declare class QuestionsService {
         createdAt: Date;
         updatedAt: Date;
         type: import(".prisma/client").$Enums.QuestionType;
+        order: number;
         sessionId: string;
         title: string;
-        order: number;
         options: import("@prisma/client/runtime/library").JsonValue;
         timeLimit: number | null;
     })[]>;
@@ -47,9 +47,9 @@ export declare class QuestionsService {
         createdAt: Date;
         updatedAt: Date;
         type: import(".prisma/client").$Enums.QuestionType;
+        order: number;
         sessionId: string;
         title: string;
-        order: number;
         options: import("@prisma/client/runtime/library").JsonValue;
         timeLimit: number | null;
     })[]>;
@@ -71,9 +71,9 @@ export declare class QuestionsService {
         createdAt: Date;
         updatedAt: Date;
         type: import(".prisma/client").$Enums.QuestionType;
+        order: number;
         sessionId: string;
         title: string;
-        order: number;
         options: import("@prisma/client/runtime/library").JsonValue;
         timeLimit: number | null;
     }>;
@@ -82,9 +82,9 @@ export declare class QuestionsService {
         createdAt: Date;
         updatedAt: Date;
         type: import(".prisma/client").$Enums.QuestionType;
+        order: number;
         sessionId: string;
         title: string;
-        order: number;
         options: import("@prisma/client/runtime/library").JsonValue;
         timeLimit: number | null;
     }, never, import("@prisma/client/runtime/library").DefaultArgs>;
@@ -93,9 +93,9 @@ export declare class QuestionsService {
         createdAt: Date;
         updatedAt: Date;
         type: import(".prisma/client").$Enums.QuestionType;
+        order: number;
         sessionId: string;
         title: string;
-        order: number;
         options: import("@prisma/client/runtime/library").JsonValue;
         timeLimit: number | null;
     }, never, import("@prisma/client/runtime/library").DefaultArgs>;

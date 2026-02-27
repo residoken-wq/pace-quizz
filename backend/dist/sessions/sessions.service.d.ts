@@ -29,9 +29,9 @@ export declare class SessionsService {
             createdAt: Date;
             updatedAt: Date;
             type: import(".prisma/client").$Enums.QuestionType;
+            order: number;
             sessionId: string;
             title: string;
-            order: number;
             options: import("@prisma/client/runtime/library").JsonValue;
             timeLimit: number | null;
         }[];
@@ -51,9 +51,9 @@ export declare class SessionsService {
             createdAt: Date;
             updatedAt: Date;
             type: import(".prisma/client").$Enums.QuestionType;
+            order: number;
             sessionId: string;
             title: string;
-            order: number;
             options: import("@prisma/client/runtime/library").JsonValue;
             timeLimit: number | null;
         }[];
@@ -82,9 +82,9 @@ export declare class SessionsService {
             createdAt: Date;
             updatedAt: Date;
             type: import(".prisma/client").$Enums.QuestionType;
+            order: number;
             sessionId: string;
             title: string;
-            order: number;
             options: import("@prisma/client/runtime/library").JsonValue;
             timeLimit: number | null;
         }[];
@@ -110,9 +110,9 @@ export declare class SessionsService {
             createdAt: Date;
             updatedAt: Date;
             type: import(".prisma/client").$Enums.QuestionType;
+            order: number;
             sessionId: string;
             title: string;
-            order: number;
             options: import("@prisma/client/runtime/library").JsonValue;
             timeLimit: number | null;
         }[];
@@ -146,4 +146,44 @@ export declare class SessionsService {
         status: import(".prisma/client").$Enums.SessionStatus;
         hostId: string;
     }, never, import("@prisma/client/runtime/library").DefaultArgs>;
+    startSession(id: string): Promise<{
+        name: string;
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        pin: string;
+        type: import(".prisma/client").$Enums.SessionType;
+        status: import(".prisma/client").$Enums.SessionStatus;
+        hostId: string;
+    }>;
+    endSession(id: string): Promise<{
+        name: string;
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        pin: string;
+        type: import(".prisma/client").$Enums.SessionType;
+        status: import(".prisma/client").$Enums.SessionStatus;
+        hostId: string;
+    }>;
+    resetResults(id: string): Promise<{
+        message: string;
+        questionsReset: number;
+    }>;
+    getActivityLogs(id: string): import(".prisma/client").Prisma.PrismaPromise<{
+        id: string;
+        createdAt: Date;
+        action: import(".prisma/client").$Enums.ActivityAction;
+        details: import("@prisma/client/runtime/library").JsonValue | null;
+        sessionId: string;
+    }[]>;
+    getResults(id: string): Promise<{
+        id: string;
+        title: string;
+        type: import(".prisma/client").$Enums.QuestionType;
+        order: number;
+        options: any[];
+        totalResponses: number;
+        voteCounts: Record<string, number>;
+    }[]>;
 }

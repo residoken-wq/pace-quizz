@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, Request as NestRequest } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
 import { SessionsService } from './sessions.service';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { UpdateSessionDto } from './dto/update-session.dto';
@@ -11,7 +11,6 @@ export class SessionsController {
 
   @Post()
   create(@Body() createSessionDto: CreateSessionDto, @Req() req: any) {
-    // Auto-fill hostId from JWT payload
     createSessionDto.hostId = req.user.userId;
     return this.sessionsService.create(createSessionDto);
   }
@@ -44,5 +43,32 @@ export class SessionsController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.sessionsService.remove(id);
+  }
+
+  // ─── Session Lifecycle ─── 
+
+  @Post(':id/start')
+  startSession(@Param('id') id: string) {
+    return this.sessionsService.startSession(id);
+  }
+
+  @Post(':id/end')
+  endSession(@Param('id') id: string) {
+    return this.sessionsService.endSession(id);
+  }
+
+  @Post(':id/reset')
+  resetResults(@Param('id') id: string) {
+    return this.sessionsService.resetResults(id);
+  }
+
+  @Get(':id/logs')
+  getActivityLogs(@Param('id') id: string) {
+    return this.sessionsService.getActivityLogs(id);
+  }
+
+  @Get(':id/results')
+  getResults(@Param('id') id: string) {
+    return this.sessionsService.getResults(id);
   }
 }

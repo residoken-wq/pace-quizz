@@ -43,32 +43,106 @@ let SessionsService = class SessionsService {
     async findOne(id) {
         const session = await this.prisma.session.findUnique({
             where: { id },
-            include: { host: true, questions: true, participants: true },
+            include: { host: true, questions: { orderBy: { order: 'asc' } }, participants: true },
         });
-        if (!session) {
+        if (!session)
             throw new common_1.NotFoundException(`Session with ID ${id} not found`);
-        }
         return session;
     }
     async findByPin(pin) {
         const session = await this.prisma.session.findUnique({
             where: { pin },
-            include: { questions: true },
+            include: { questions: { orderBy: { order: 'asc' } } },
         });
-        if (!session) {
+        if (!session)
             throw new common_1.NotFoundException(`Session with PIN ${pin} not found`);
-        }
         return session;
     }
     update(id, updateSessionDto) {
-        return this.prisma.session.update({
-            where: { id },
-            data: updateSessionDto,
-        });
+        return this.prisma.session.update({ where: { id }, data: updateSessionDto });
     }
     remove(id) {
-        return this.prisma.session.delete({
+        return this.prisma.session.delete({ where: { id } });
+    }
+    async startSession(id) {
+        const session = await this.prisma.session.update({
             where: { id },
+            data: { status: 'ACTIVE' },
+        });
+        await this.prisma.activityLog.create({
+            data: { sessionId: id, action: 'SESSION_STARTED' },
+        });
+        return session;
+    }
+    async endSession(id) {
+        const session = await this.prisma.session.update({
+            where: { id },
+            data: { status: 'FINISHED' },
+        });
+        await this.prisma.activityLog.create({
+            data: { sessionId: id, action: 'SESSION_ENDED' },
+        });
+        return session;
+    }
+    async resetResults(id) {
+        const questions = await this.prisma.question.findMany({
+            where: { sessionId: id },
+            select: { id: true },
+        });
+        const questionIds = questions.map(q => q.id);
+        await this.prisma.response.deleteMany({
+            where: { questionId: { in: questionIds } },
+        });
+        await this.prisma.participant.deleteMany({
+            where: { sessionId: id },
+        });
+        await this.prisma.session.update({
+            where: { id },
+            data: { status: 'CREATED' },
+        });
+        await this.prisma.activityLog.create({
+            data: {
+                sessionId: id,
+                action: 'RESULTS_RESET',
+                details: { questionsReset: questionIds.length },
+            },
+        });
+        return { message: 'Results reset successfully', questionsReset: questionIds.length };
+    }
+    getActivityLogs(id) {
+        return this.prisma.activityLog.findMany({
+            where: { sessionId: id },
+            orderBy: { createdAt: 'desc' },
+            take: 100,
+        });
+    }
+    async getResults(id) {
+        const questions = await this.prisma.question.findMany({
+            where: { sessionId: id },
+            orderBy: { order: 'asc' },
+            include: {
+                responses: true,
+            },
+        });
+        return questions.map(q => {
+            const options = q.options || [];
+            const voteCounts = {};
+            options.forEach((opt) => { voteCounts[opt.id] = 0; });
+            q.responses.forEach(r => {
+                const answer = r.answer;
+                if (answer?.optionId && voteCounts[answer.optionId] !== undefined) {
+                    voteCounts[answer.optionId]++;
+                }
+            });
+            return {
+                id: q.id,
+                title: q.title,
+                type: q.type,
+                order: q.order,
+                options,
+                totalResponses: q.responses.length,
+                voteCounts,
+            };
         });
     }
 };
