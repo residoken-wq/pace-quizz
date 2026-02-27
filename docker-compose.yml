@@ -5,9 +5,11 @@ services:
     image: postgres:15-alpine
     container_name: pace_quizz_db
     restart: always
+    env_file:
+      - ./backend/.env
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-quizzies_pace}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-pace_quizz}
     # ports:
     #   - "5432:5432" # Đóng port host để tránh đụng với Postgres VPS
