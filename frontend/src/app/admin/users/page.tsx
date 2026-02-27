@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { Search, Plus, UserCog, User, Shield, Trash2, Edit } from 'lucide-react';
+import UserModal from './components/UserModal';
 
-// Mock types representing Prisma User model
 type UserAdminView = {
     id: string;
     email: string;
@@ -15,22 +15,81 @@ type UserAdminView = {
 export default function AdminUsersManagement() {
     const [users, setUsers] = useState<UserAdminView[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [userToEdit, setUserToEdit] = useState<UserAdminView | null>(null);
+
+    const fetchUsers = async () => {
+        setIsLoading(true);
+        try {
+            const token = localStorage.getItem('access_token');
+            const res = await fetch('http://localhost:3001/users', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setUsers(data);
+            }
+        } catch (error) {
+            console.error('Failed to fetch users', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     useEffect(() => {
-        // TODO: Fetch from real NestJS GET /users API
-        setTimeout(() => {
-            setUsers([
-                { id: 'usr_1', email: 'admin@pace.edu.vn', name: 'Super Admin', role: 'ADMIN', createdAt: new Date().toISOString() },
-                { id: 'usr_2', email: 'nhan.nt@pace.edu.vn', name: 'Nguyen Thanh Nhan', role: 'HOST', createdAt: new Date(Date.now() - 86400000).toISOString() },
-                { id: 'usr_3', email: 'marketing@pace.edu.vn', name: 'Marketing Team', role: 'HOST', createdAt: new Date(Date.now() - 172800000).toISOString() },
-            ]);
-            setIsLoading(false);
-        }, 600);
+        fetchUsers();
     }, []);
 
     const handleCreateUser = () => {
-        // Open create user modal (omitted for brevity)
-        alert('Create user modal will open here');
+        setUserToEdit(null);
+        setIsModalOpen(true);
+    };
+
+    const handleEditUser = (user: UserAdminView) => {
+        setUserToEdit(user);
+        setIsModalOpen(true);
+    };
+
+    const handleDeleteUser = async (id: string) => {
+        if (!confirm('Are you sure you want to delete this user?')) return;
+
+        try {
+            const token = localStorage.getItem('access_token');
+            const res = await fetch(`http://localhost:3001/users/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (res.ok) {
+                setUsers(users.filter(u => u.id !== id));
+            } else {
+                alert('Failed to delete user.');
+            }
+        } catch (error) {
+            console.error('Failed to delete user', error);
+        }
+    };
+
+    const handleSaveUser = async (userId: string | null, data: any) => {
+        const token = localStorage.getItem('access_token');
+        const url = userId ? `http://localhost:3001/users/${userId}` : 'http://localhost:3001/users';
+        const method = userId ? 'PATCH' : 'POST';
+
+        const res = await fetch(url, {
+            method,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(data),
+        });
+
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.message || 'Failed to save user');
+        }
+
+        await fetchUsers();
     };
 
     return (
@@ -103,8 +162,8 @@ export default function AdminUsersManagement() {
 
                                         <td className="p-4">
                                             <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold border ${user.role === 'ADMIN'
-                                                    ? 'border-purple-200 bg-purple-50 text-purple-700'
-                                                    : 'border-blue-200 bg-blue-50 text-blue-700'
+                                                ? 'border-purple-200 bg-purple-50 text-purple-700'
+                                                : 'border-blue-200 bg-blue-50 text-blue-700'
                                                 }`}>
                                                 {user.role === 'ADMIN' ? <Shield size={12} /> : <User size={12} />}
                                                 {user.role}
@@ -117,10 +176,10 @@ export default function AdminUsersManagement() {
 
                                         <td className="p-4">
                                             <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit User">
+                                                <button onClick={() => handleEditUser(user)} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit User">
                                                     <Edit size={18} />
                                                 </button>
-                                                <button className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete User">
+                                                <button onClick={() => handleDeleteUser(user.id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete User">
                                                     <Trash2 size={18} />
                                                 </button>
                                             </div>
@@ -132,6 +191,13 @@ export default function AdminUsersManagement() {
                     </table>
                 </div>
             </div>
+
+            <UserModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onSave={handleSaveUser}
+                userToEdit={userToEdit}
+            />
         </div>
     );
 }
