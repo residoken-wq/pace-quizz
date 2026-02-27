@@ -59,6 +59,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.quizz.pace.edu.vn}
     container_name: pace_quizz_frontend
     restart: always
     # ports:

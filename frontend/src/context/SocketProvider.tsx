@@ -23,7 +23,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
 
     useEffect(() => {
         // In production, NEXT_PUBLIC_API_URL should point to the wss:// or https:// backend domain.
-        const socketUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+        const socketUrl = process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.hostname}:3001` : 'http://localhost:3001');
 
         const socketInstance = io(socketUrl, {
             transports: ['websocket'],

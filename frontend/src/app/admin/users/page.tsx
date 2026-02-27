@@ -22,7 +22,8 @@ export default function AdminUsersManagement() {
         setIsLoading(true);
         try {
             const token = localStorage.getItem('access_token');
-            const res = await fetch('http://localhost:3001/users', {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.hostname}:3001` : 'http://localhost:3001');
+            const res = await fetch(`${apiUrl}/users`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (res.ok) {
@@ -55,7 +56,8 @@ export default function AdminUsersManagement() {
 
         try {
             const token = localStorage.getItem('access_token');
-            const res = await fetch(`http://localhost:3001/users/${id}`, {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.hostname}:3001` : 'http://localhost:3001');
+            const res = await fetch(`${apiUrl}/users/${id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -72,7 +74,8 @@ export default function AdminUsersManagement() {
 
     const handleSaveUser = async (userId: string | null, data: any) => {
         const token = localStorage.getItem('access_token');
-        const url = userId ? `http://localhost:3001/users/${userId}` : 'http://localhost:3001/users';
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.hostname}:3001` : 'http://localhost:3001');
+        const url = userId ? `${apiUrl}/users/${userId}` : `${apiUrl}/users`;
         const method = userId ? 'PATCH' : 'POST';
 
         const res = await fetch(url, {
