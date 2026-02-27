@@ -39,10 +39,10 @@ export declare class UsersService {
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            hostId: string;
-            type: import(".prisma/client").$Enums.SessionType;
             pin: string;
+            type: import(".prisma/client").$Enums.SessionType;
             status: import(".prisma/client").$Enums.SessionStatus;
+            hostId: string;
         }[];
     }>;
     update(id: string, updateUserDto: UpdateUserDto): Promise<{

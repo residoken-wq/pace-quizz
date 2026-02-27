@@ -80,7 +80,8 @@ __decorate([
 exports.EventsGateway = EventsGateway = __decorate([
     (0, websockets_1.WebSocketGateway)({
         cors: {
-            origin: '*',
+            origin: true,
+            credentials: true,
         },
     })
 ], EventsGateway);

@@ -6,17 +6,25 @@ import { ValidationPipe } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors({
-    origin: ['http://localhost:3000', 'https://quizz.pace.edu.vn', 'https://api.quizz.pace.edu.vn'],
+    origin: true, // Allow all origins dynamically (reflects the request origin)
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
 
-  const redisIoAdapter = new RedisIoAdapter(app);
-  await redisIoAdapter.connectToRedis();
-  app.useWebSocketAdapter(redisIoAdapter);
+  // Gracefully handle Redis connection failure - app still starts without WebSocket scaling
+  try {
+    const redisIoAdapter = new RedisIoAdapter(app);
+    await redisIoAdapter.connectToRedis();
+    app.useWebSocketAdapter(redisIoAdapter);
+    console.log('✅ Redis WebSocket adapter connected successfully');
+  } catch (error) {
+    console.warn('⚠️ Redis WebSocket adapter failed to connect. WebSockets will use in-memory adapter.', error.message);
+  }
 
-  await app.listen(process.env.PORT ?? 3001);
+  const port = process.env.PORT ?? 3001;
+  await app.listen(port);
+  console.log(`🚀 Backend is running on port ${port}`);
 }
 bootstrap();

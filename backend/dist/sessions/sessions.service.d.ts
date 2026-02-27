@@ -9,10 +9,10 @@ export declare class SessionsService {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        hostId: string;
-        type: import(".prisma/client").$Enums.SessionType;
         pin: string;
+        type: import(".prisma/client").$Enums.SessionType;
         status: import(".prisma/client").$Enums.SessionStatus;
+        hostId: string;
     }>;
     findAll(): import(".prisma/client").Prisma.PrismaPromise<({
         host: {
@@ -40,10 +40,10 @@ export declare class SessionsService {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        hostId: string;
-        type: import(".prisma/client").$Enums.SessionType;
         pin: string;
+        type: import(".prisma/client").$Enums.SessionType;
         status: import(".prisma/client").$Enums.SessionStatus;
+        hostId: string;
     })[]>;
     findOne(id: string): Promise<{
         host: {
@@ -77,10 +77,10 @@ export declare class SessionsService {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        hostId: string;
-        type: import(".prisma/client").$Enums.SessionType;
         pin: string;
+        type: import(".prisma/client").$Enums.SessionType;
         status: import(".prisma/client").$Enums.SessionStatus;
+        hostId: string;
     }>;
     findByPin(pin: string): Promise<{
         questions: {
@@ -99,29 +99,29 @@ export declare class SessionsService {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        hostId: string;
-        type: import(".prisma/client").$Enums.SessionType;
         pin: string;
+        type: import(".prisma/client").$Enums.SessionType;
         status: import(".prisma/client").$Enums.SessionStatus;
+        hostId: string;
     }>;
     update(id: string, updateSessionDto: UpdateSessionDto): import(".prisma/client").Prisma.Prisma__SessionClient<{
         name: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        hostId: string;
-        type: import(".prisma/client").$Enums.SessionType;
         pin: string;
+        type: import(".prisma/client").$Enums.SessionType;
         status: import(".prisma/client").$Enums.SessionStatus;
+        hostId: string;
     }, never, import("@prisma/client/runtime/library").DefaultArgs>;
     remove(id: string): import(".prisma/client").Prisma.Prisma__SessionClient<{
         name: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        hostId: string;
-        type: import(".prisma/client").$Enums.SessionType;
         pin: string;
+        type: import(".prisma/client").$Enums.SessionType;
         status: import(".prisma/client").$Enums.SessionStatus;
+        hostId: string;
     }, never, import("@prisma/client/runtime/library").DefaultArgs>;
 }
