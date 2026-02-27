@@ -5,7 +5,12 @@ import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.enableCors(); // Frontend runs on different port
+  app.enableCors({
+    origin: ['http://localhost:3000', 'https://quizz.pace.edu.vn', 'https://api.quizz.pace.edu.vn'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
 
   const redisIoAdapter = new RedisIoAdapter(app);
