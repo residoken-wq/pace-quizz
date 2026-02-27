@@ -21,10 +21,10 @@ export declare class QuestionsService {
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            pin: string;
-            type: import(".prisma/client").$Enums.SessionType;
-            status: import(".prisma/client").$Enums.SessionStatus;
             hostId: string;
+            type: import(".prisma/client").$Enums.SessionType;
+            pin: string;
+            status: import(".prisma/client").$Enums.SessionStatus;
         };
     } & {
         id: string;

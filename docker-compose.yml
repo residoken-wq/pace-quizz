@@ -7,7 +7,7 @@ services:
     restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:quizzies_pace}
       POSTGRES_DB: ${POSTGRES_DB:-pace_quizz}
     # ports:
     #   - "5432:5432" # Đóng port host để tránh đụng với Postgres VPS
