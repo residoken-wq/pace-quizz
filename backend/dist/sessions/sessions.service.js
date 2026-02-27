@@ -33,6 +33,13 @@ let SessionsService = class SessionsService {
             include: { host: true, questions: true },
         });
     }
+    findByHost(hostId) {
+        return this.prisma.session.findMany({
+            where: { hostId },
+            include: { questions: true },
+            orderBy: { createdAt: 'desc' },
+        });
+    }
     async findOne(id) {
         const session = await this.prisma.session.findUnique({
             where: { id },

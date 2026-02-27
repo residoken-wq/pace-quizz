@@ -17,13 +17,18 @@ const common_1 = require("@nestjs/common");
 const sessions_service_1 = require("./sessions.service");
 const create_session_dto_1 = require("./dto/create-session.dto");
 const update_session_dto_1 = require("./dto/update-session.dto");
+const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 let SessionsController = class SessionsController {
     sessionsService;
     constructor(sessionsService) {
         this.sessionsService = sessionsService;
     }
-    create(createSessionDto) {
+    create(createSessionDto, req) {
+        createSessionDto.hostId = req.user.userId;
         return this.sessionsService.create(createSessionDto);
+    }
+    findMySessions(req) {
+        return this.sessionsService.findByHost(req.user.userId);
     }
     findAll() {
         return this.sessionsService.findAll();
@@ -45,10 +50,18 @@ exports.SessionsController = SessionsController;
 __decorate([
     (0, common_1.Post)(),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [create_session_dto_1.CreateSessionDto]),
+    __metadata("design:paramtypes", [create_session_dto_1.CreateSessionDto, Object]),
     __metadata("design:returntype", void 0)
 ], SessionsController.prototype, "create", null);
+__decorate([
+    (0, common_1.Get)('my'),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], SessionsController.prototype, "findMySessions", null);
 __decorate([
     (0, common_1.Get)(),
     __metadata("design:type", Function),
@@ -86,6 +99,7 @@ __decorate([
 ], SessionsController.prototype, "remove", null);
 exports.SessionsController = SessionsController = __decorate([
     (0, common_1.Controller)('sessions'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __metadata("design:paramtypes", [sessions_service_1.SessionsService])
 ], SessionsController);
 //# sourceMappingURL=sessions.controller.js.map

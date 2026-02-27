@@ -26,6 +26,14 @@ export class QuestionsService {
     });
   }
 
+  findBySession(sessionId: string) {
+    return this.prisma.question.findMany({
+      where: { sessionId },
+      orderBy: { order: 'asc' },
+      include: { tags: true },
+    });
+  }
+
   async findOne(id: string) {
     const question = await this.prisma.question.findUnique({
       where: { id },

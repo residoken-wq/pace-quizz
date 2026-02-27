@@ -45,6 +45,28 @@ export declare class SessionsService {
         status: import(".prisma/client").$Enums.SessionStatus;
         hostId: string;
     })[]>;
+    findByHost(hostId: string): import(".prisma/client").Prisma.PrismaPromise<({
+        questions: {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            type: import(".prisma/client").$Enums.QuestionType;
+            sessionId: string;
+            title: string;
+            order: number;
+            options: import("@prisma/client/runtime/library").JsonValue;
+            timeLimit: number | null;
+        }[];
+    } & {
+        name: string;
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        pin: string;
+        type: import(".prisma/client").$Enums.SessionType;
+        status: import(".prisma/client").$Enums.SessionStatus;
+        hostId: string;
+    })[]>;
     findOne(id: string): Promise<{
         host: {
             email: string;

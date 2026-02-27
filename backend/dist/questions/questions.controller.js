@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const questions_service_1 = require("./questions.service");
 const create_question_dto_1 = require("./dto/create-question.dto");
 const update_question_dto_1 = require("./dto/update-question.dto");
+const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 let QuestionsController = class QuestionsController {
     questionsService;
     constructor(questionsService) {
@@ -27,6 +28,9 @@ let QuestionsController = class QuestionsController {
     }
     findAll() {
         return this.questionsService.findAll();
+    }
+    findBySession(sessionId) {
+        return this.questionsService.findBySession(sessionId);
     }
     findOne(id) {
         return this.questionsService.findOne(id);
@@ -40,6 +44,7 @@ let QuestionsController = class QuestionsController {
 };
 exports.QuestionsController = QuestionsController;
 __decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Post)(),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -53,6 +58,13 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], QuestionsController.prototype, "findAll", null);
 __decorate([
+    (0, common_1.Get)('session/:sessionId'),
+    __param(0, (0, common_1.Param)('sessionId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], QuestionsController.prototype, "findBySession", null);
+__decorate([
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
@@ -60,6 +72,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], QuestionsController.prototype, "findOne", null);
 __decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Patch)(':id'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
@@ -68,6 +81,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], QuestionsController.prototype, "update", null);
 __decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Delete)(':id'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),

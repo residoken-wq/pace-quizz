@@ -34,6 +34,13 @@ let QuestionsService = class QuestionsService {
             include: { session: true },
         });
     }
+    findBySession(sessionId) {
+        return this.prisma.question.findMany({
+            where: { sessionId },
+            orderBy: { order: 'asc' },
+            include: { tags: true },
+        });
+    }
     async findOne(id) {
         const question = await this.prisma.question.findUnique({
             where: { id },

@@ -2,24 +2,41 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { LogIn } from 'lucide-react';
+import { LogIn, AlertCircle } from 'lucide-react';
 
 export default function PresenterLogin() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const router = useRouter();
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError('');
         setIsLoading(true);
 
-        // TODO: Connect to real NestJS Auth login API
-        // For now, mock a successful login delay
-        setTimeout(() => {
-            // Upon successful login, typically save JWT token, then redirect
+        try {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.hostname}:3001` : 'http://localhost:3001');
+            const res = await fetch(`${apiUrl}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password }),
+            });
+
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.message || 'Invalid email or password');
+            }
+
+            const data = await res.json();
+            localStorage.setItem('access_token', data.access_token);
             router.push('/presenter/dashboard');
-        }, 800);
+        } catch (err: any) {
+            setError(err.message || 'Login failed. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -30,6 +47,13 @@ export default function PresenterLogin() {
                         <h1 className="text-3xl font-extrabold text-blue-600 mb-2">Host Portal</h1>
                         <p className="text-gray-500 font-medium">Log in to manage your sessions</p>
                     </div>
+
+                    {error && (
+                        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6 flex items-center gap-2 text-sm font-medium">
+                            <AlertCircle size={18} />
+                            {error}
+                        </div>
+                    )}
 
                     <form onSubmit={handleLogin} className="space-y-6">
                         <div>
@@ -75,3 +99,4 @@ export default function PresenterLogin() {
         </div>
     );
 }
+

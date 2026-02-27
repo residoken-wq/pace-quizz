@@ -4,7 +4,7 @@ import { UpdateSessionDto } from './dto/update-session.dto';
 export declare class SessionsController {
     private readonly sessionsService;
     constructor(sessionsService: SessionsService);
-    create(createSessionDto: CreateSessionDto): Promise<{
+    create(createSessionDto: CreateSessionDto, req: any): Promise<{
         name: string;
         id: string;
         createdAt: Date;
@@ -14,6 +14,28 @@ export declare class SessionsController {
         status: import(".prisma/client").$Enums.SessionStatus;
         hostId: string;
     }>;
+    findMySessions(req: any): import(".prisma/client").Prisma.PrismaPromise<({
+        questions: {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            type: import(".prisma/client").$Enums.QuestionType;
+            sessionId: string;
+            title: string;
+            order: number;
+            options: import("@prisma/client/runtime/library").JsonValue;
+            timeLimit: number | null;
+        }[];
+    } & {
+        name: string;
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        pin: string;
+        type: import(".prisma/client").$Enums.SessionType;
+        status: import(".prisma/client").$Enums.SessionStatus;
+        hostId: string;
+    })[]>;
     findAll(): import(".prisma/client").Prisma.PrismaPromise<({
         host: {
             email: string;

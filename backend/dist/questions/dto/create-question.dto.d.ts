@@ -3,6 +3,6 @@ export declare class CreateQuestionDto {
     title: string;
     order: number;
     type?: 'MULTIPLE_CHOICE' | 'WORD_CLOUD' | 'RATING_SCALE';
-    options: any;
+    options?: any;
     timeLimit?: number;
 }

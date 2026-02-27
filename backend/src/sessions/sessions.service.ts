@@ -14,7 +14,7 @@ export class SessionsService {
     return this.prisma.session.create({
       data: {
         name: createSessionDto.name,
-        hostId: createSessionDto.hostId,
+        hostId: createSessionDto.hostId as string,
         type: createSessionDto.type || 'LIVE',
         pin: generatedPin,
       },
@@ -24,6 +24,14 @@ export class SessionsService {
   findAll() {
     return this.prisma.session.findMany({
       include: { host: true, questions: true },
+    });
+  }
+
+  findByHost(hostId: string) {
+    return this.prisma.session.findMany({
+      where: { hostId },
+      include: { questions: true },
+      orderBy: { createdAt: 'desc' },
     });
   }
 

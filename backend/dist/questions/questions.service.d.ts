@@ -37,6 +37,22 @@ export declare class QuestionsService {
         options: import("@prisma/client/runtime/library").JsonValue;
         timeLimit: number | null;
     })[]>;
+    findBySession(sessionId: string): import(".prisma/client").Prisma.PrismaPromise<({
+        tags: {
+            name: string;
+            id: string;
+        }[];
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        type: import(".prisma/client").$Enums.QuestionType;
+        sessionId: string;
+        title: string;
+        order: number;
+        options: import("@prisma/client/runtime/library").JsonValue;
+        timeLimit: number | null;
+    })[]>;
     findOne(id: string): Promise<{
         tags: {
             name: string;
