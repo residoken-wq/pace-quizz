@@ -102,7 +102,7 @@ export default function ParticipantScreen() {
                                         key={option.id || idx}
                                         onClick={() => handleVote(option.id)}
                                         disabled={selectedOption !== null}
-                                        className={`w-full p-6 text-left rounded-2xl shadow-sm border-2 transition-all active:scale-[0.98]
+                                        className={`w-full p-4 sm:p-6 text-left rounded-2xl shadow-sm border-2 transition-all active:scale-[0.98]
                       ${selectedOption === option.id
                                                 ? 'border-blue-500 bg-blue-50 ring-4 ring-blue-100'
                                                 : selectedOption !== null
@@ -111,7 +111,7 @@ export default function ParticipantScreen() {
                                             }
                     `}
                                     >
-                                        <span className="text-xl font-semibold text-gray-800">{option.text}</span>
+                                        <span className="text-lg sm:text-xl font-semibold text-gray-800 break-words block">{option.text}</span>
                                     </button>
                                 ))}
                             </div>

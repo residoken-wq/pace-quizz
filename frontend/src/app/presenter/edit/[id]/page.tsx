@@ -557,20 +557,20 @@ function MultipleChoiceEditor({ options, onChange }: { options: Option[]; onChan
                     return (
                         <div
                             key={opt.id}
-                            className={`flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all ${opt.isCorrect
+                            className={`flex items-start gap-3 p-3.5 rounded-xl border-2 transition-all ${opt.isCorrect
                                 ? 'border-emerald-400 bg-emerald-50 shadow-md shadow-emerald-100'
                                 : `${theme.border} ${theme.bg} hover:shadow-sm`
                                 }`}
                         >
                             {/* Letter Badge  */}
-                            <div className={`w-9 h-9 rounded-lg ${opt.isCorrect ? 'bg-emerald-500' : theme.label} flex items-center justify-center shrink-0 shadow-sm`}>
+                            <div className={`mt-0.5 w-9 h-9 rounded-lg ${opt.isCorrect ? 'bg-emerald-500' : theme.label} flex items-center justify-center shrink-0 shadow-sm`}>
                                 <span className="text-white text-sm font-black">{letter}</span>
                             </div>
 
                             {/* Correct toggle */}
                             <button
                                 onClick={() => toggleCorrect(idx)}
-                                className={`shrink-0 w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all ${opt.isCorrect
+                                className={`mt-1.5 shrink-0 w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all ${opt.isCorrect
                                     ? 'border-emerald-500 bg-emerald-500 text-white shadow-sm shadow-emerald-200'
                                     : 'border-slate-300 hover:border-emerald-400 hover:bg-emerald-50'
                                     }`}
@@ -580,19 +580,23 @@ function MultipleChoiceEditor({ options, onChange }: { options: Option[]; onChan
                             </button>
 
                             {/* Text input */}
-                            <input
-                                type="text"
+                            <textarea
                                 value={opt.text}
-                                onChange={(e) => updateOption(idx, { text: e.target.value })}
+                                onChange={(e) => {
+                                    e.target.style.height = 'auto';
+                                    e.target.style.height = e.target.scrollHeight + 'px';
+                                    updateOption(idx, { text: e.target.value });
+                                }}
                                 placeholder={`Nhập đáp án ${letter}...`}
-                                className={`flex-1 py-2 px-3 rounded-lg border-none bg-transparent outline-none text-sm font-medium ${opt.isCorrect ? 'text-emerald-900 placeholder:text-emerald-300' : 'text-slate-800 placeholder:text-slate-300'}`}
+                                rows={1}
+                                className={`flex-1 py-1.5 px-3 rounded-lg border-none bg-transparent outline-none text-sm font-medium resize-none leading-relaxed min-h-[40px] overflow-hidden ${opt.isCorrect ? 'text-emerald-900 placeholder:text-emerald-300' : 'text-slate-800 placeholder:text-slate-300'}`}
                             />
 
                             {/* Delete button */}
                             {options.length > 2 && (
                                 <button
                                     onClick={() => removeOption(idx)}
-                                    className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all"
+                                    className="mt-0.5 shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all"
                                     title="Xoá đáp án"
                                 >
                                     <Trash2 size={15} />
