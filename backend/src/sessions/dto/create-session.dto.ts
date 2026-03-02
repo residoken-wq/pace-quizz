@@ -11,4 +11,12 @@ export class CreateSessionDto {
     @IsOptional()
     @IsEnum(['LIVE', 'SURVEY'])
     type?: 'LIVE' | 'SURVEY';
+
+    @IsOptional()
+    @IsString()
+    bannerUrl?: string;
+
+    @IsOptional()
+    @IsString()
+    thankYouMessage?: string;
 }

@@ -33,6 +33,8 @@ type Session = {
     type: 'LIVE' | 'SURVEY';
     status: string;
     questions: Question[];
+    bannerUrl?: string;
+    thankYouMessage?: string;
 };
 
 function getApiUrl() {
@@ -342,6 +344,76 @@ export default function SessionEditor() {
                             })}
                         </div>
                     </div>
+
+                    {/* Survey Settings */}
+                    {session?.type === 'SURVEY' && (
+                        <div className="p-4 border-t border-slate-100 bg-emerald-50/30">
+                            <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-2.5 flex items-center gap-1.5">
+                                <Sparkles size={12} /> Cài đặt Khảo sát
+                            </p>
+                            <div className="space-y-3">
+                                <div>
+                                    <label className="text-xs font-semibold text-slate-600 mb-1 block">Banner (Tỉ lệ 16:9)</label>
+                                    <label className="cursor-pointer block">
+                                        <input
+                                            type="file"
+                                            className="hidden"
+                                            accept="image/*"
+                                            onChange={async (e) => {
+                                                const file = e.target.files?.[0];
+                                                if (!file) return;
+                                                const formData = new FormData();
+                                                formData.append('file', file);
+                                                try {
+                                                    const res = await fetch(`${getApiUrl()}/upload`, {
+                                                        method: 'POST',
+                                                        headers: { 'Authorization': `Bearer ${getToken()}` },
+                                                        body: formData,
+                                                    });
+                                                    if (res.ok) {
+                                                        const data = await res.json();
+                                                        setSession(prev => prev ? { ...prev, bannerUrl: data.url } : prev);
+                                                        // Automatically save the session update
+                                                        await fetch(`${getApiUrl()}/sessions/${sessionId}`, {
+                                                            method: 'PATCH',
+                                                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
+                                                            body: JSON.stringify({ bannerUrl: data.url }),
+                                                        });
+                                                    }
+                                                } catch (err) { console.error('Upload failed', err); }
+                                            }}
+                                        />
+                                        <div className="w-full h-20 rounded-lg border-2 border-dashed border-emerald-200 bg-white flex flex-col items-center justify-center text-emerald-500 hover:bg-emerald-50 transition-colors overflow-hidden">
+                                            {session.bannerUrl ? (
+                                                <img src={`${getApiUrl()}${session.bannerUrl}`} alt="Banner" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <span className="text-xs font-semibold">Tải ảnh lên...</span>
+                                            )}
+                                        </div>
+                                    </label>
+                                </div>
+                                <div>
+                                    <label className="text-xs font-semibold text-slate-600 mb-1 block">Lời cảm ơn tuỳ chỉnh</label>
+                                    <textarea
+                                        value={session?.thankYouMessage || ''}
+                                        onChange={(e) => setSession(prev => prev ? { ...prev, thankYouMessage: e.target.value } : prev)}
+                                        onBlur={async () => {
+                                            if (session?.thankYouMessage !== undefined) {
+                                                await fetch(`${getApiUrl()}/sessions/${sessionId}`, {
+                                                    method: 'PATCH',
+                                                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
+                                                    body: JSON.stringify({ thankYouMessage: session.thankYouMessage }),
+                                                });
+                                            }
+                                        }}
+                                        className="w-full text-xs p-2 rounded-lg border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none resize-none"
+                                        rows={3}
+                                        placeholder="Cảm ơn bạn đã tham gia..."
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </aside>
 
                 {/* ─── Right: Question Editor ─── */}

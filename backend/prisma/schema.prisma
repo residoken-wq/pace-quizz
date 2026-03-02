@@ -28,18 +28,20 @@ enum Role {
 }
 
 model Session {
-  id           String        @id @default(uuid())
-  name         String
-  pin          String        @unique @db.VarChar(6)
-  type         SessionType   @default(LIVE) // LIVE synchronous or SURVEY asynchronous
-  status       SessionStatus @default(CREATED)
-  hostId       String
-  host         User          @relation(fields: [hostId], references: [id])
-  questions    Question[]
-  participants Participant[]
-  activityLogs ActivityLog[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id              String        @id @default(uuid())
+  name            String
+  pin             String        @unique @db.VarChar(6)
+  type            SessionType   @default(LIVE) // LIVE synchronous or SURVEY asynchronous
+  status          SessionStatus @default(CREATED)
+  hostId          String
+  host            User          @relation(fields: [hostId], references: [id])
+  questions       Question[]
+  participants    Participant[]
+  activityLogs    ActivityLog[]
+  bannerUrl       String?       // For survey mode landing
+  thankYouMessage String?       // For survey mode completion
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 }
 
 enum SessionType {

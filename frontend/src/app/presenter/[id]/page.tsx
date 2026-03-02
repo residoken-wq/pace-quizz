@@ -287,7 +287,7 @@ export default function PresenterLiveView() {
             )}
 
             {/* ═══ LIVE PHASE ═══ */}
-            {phase === 'LIVE' && currentQ && (
+            {phase === 'LIVE' && session?.type !== 'SURVEY' && currentQ && (
                 <>
                     <main className="flex-1 flex flex-col items-center justify-center p-6 sm:p-12 overflow-y-auto">
                         <div className="w-full max-w-5xl">
@@ -397,6 +397,31 @@ export default function PresenterLiveView() {
                             </button>
                         </div>
                         <div />
+                    </footer>
+                </>
+            )}
+
+            {phase === 'LIVE' && session?.type === 'SURVEY' && (
+                <>
+                    <main className="flex-1 flex flex-col items-center justify-center p-6 sm:p-12 overflow-y-auto">
+                        <div className="w-full max-w-2xl text-center">
+                            <h2 className="text-4xl font-black mb-8 text-indigo-500">Khảo sát đang diễn ra!</h2>
+                            <p className={`text-lg mb-12 ${secondaryTextClass}`}>Người tham gia có thể tự do trả lời các câu hỏi trên điện thoại theo tốc độ riêng.</p>
+                            <div className="mt-12 bg-emerald-500/10 py-10 px-12 rounded-3xl border border-emerald-500/20 inline-block">
+                                <Users className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
+                                <p className="text-7xl font-black text-emerald-500">{participantsCount}</p>
+                                <p className="text-xl font-bold text-emerald-600 mt-2">Người tham gia hiện tại</p>
+                            </div>
+                        </div>
+                    </main>
+
+                    <footer className={`h-20 border-t flex items-center justify-center px-8 ${isDark ? 'bg-[#1a1a2e] border-white/5' : 'bg-white border-slate-200 shadow-sm'}`}>
+                        <button
+                            onClick={handleEnd}
+                            className="flex items-center gap-2 bg-gradient-to-r from-red-500 to-rose-600 text-white px-10 py-4 rounded-xl font-bold transition-all shadow-lg active:scale-[0.97] text-lg"
+                        >
+                            <Square size={20} /> Kết thúc Khảo sát
+                        </button>
                     </footer>
                 </>
             )}

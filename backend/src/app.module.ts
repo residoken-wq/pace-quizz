@@ -7,9 +7,23 @@ import { SessionsModule } from './sessions/sessions.module';
 import { QuestionsModule } from './questions/questions.module';
 import { EventsGateway } from './events/events.gateway';
 import { AuthModule } from './auth/auth.module';
+import { UploadModule } from './upload/upload.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 @Module({
-  imports: [PrismaModule, UsersModule, SessionsModule, QuestionsModule, AuthModule],
+  imports: [
+    PrismaModule,
+    UsersModule,
+    SessionsModule,
+    QuestionsModule,
+    AuthModule,
+    UploadModule,
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'uploads'),
+      serveRoot: '/uploads',
+    })
+  ],
   controllers: [AppController],
   providers: [AppService, EventsGateway],
 })
