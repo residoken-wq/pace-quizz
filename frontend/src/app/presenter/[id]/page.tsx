@@ -74,7 +74,8 @@ export default function PresenterLiveView() {
                     const data = await res.json();
                     setSession(data);
                     setParticipantsCount(data.participants?.length || 0);
-                    if (data.status === 'ACTIVE') setPhase('LIVE');
+                    // Always start in LOBBY for CREATED and ACTIVE sessions to show QR code 
+                    if (data.status === 'FINISHED') setPhase('RESULTS');
                 }
             } catch (e) { console.error(e); }
             finally { setIsLoading(false); }
