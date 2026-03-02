@@ -79,12 +79,12 @@ export default function ParticipantScreen() {
         if (!hasJoined || !socket || !isConnected) return;
         socket.emit('join_session', { sessionId: pin, role: 'participant' });
 
-        socket.on('state_sync', (data: QuestionState) => {
+        socket.on('state_sync', (data: any) => {
             if (sessionData?.type === 'SURVEY') {
                 if (data.status === 'ACTIVE') setLiveState(prev => ({ ...prev, status: 'ACTIVE' }));
                 else if (data.status === 'FINISHED') setLiveState(prev => ({ ...prev, status: 'FINISHED' }));
             } else {
-                setLiveState(data);
+                setLiveState({ ...data, id: data.questionId || data.id });
                 setSelectedLiveOption(null);
                 setQStartTime(Date.now()); // reset timer for new question
             }
