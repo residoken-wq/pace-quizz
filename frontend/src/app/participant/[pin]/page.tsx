@@ -17,6 +17,7 @@ type QuestionState = {
     showCorrectAnswer?: boolean;
     showLeaderboard?: boolean;
     leaderboard?: any[];
+    timeLimit?: number;
 };
 
 const MASCOTS = ['🐶', '🐱', '🦊', '🐼', '🐨', '🐯', '🐰', '🐸', '🦄', '🦖', '🐙', '👾'];
@@ -54,6 +55,17 @@ export default function ParticipantScreen() {
 
     // Timing
     const [qStartTime, setQStartTime] = useState<number>(Date.now());
+    const [timer, setTimer] = useState<number>(0);
+
+    // Timer countdown effect
+    useEffect(() => {
+        if (liveState.status === 'ACTIVE' && liveState.timeLimit && liveState.timeLimit > 0 && timer > 0) {
+            const interval = setInterval(() => {
+                setTimer(prev => (prev > 0 ? prev - 1 : 0));
+            }, 1000);
+            return () => clearInterval(interval);
+        }
+    }, [liveState.status, liveState.timeLimit, timer]);
 
     useEffect(() => {
         const fetchInitialData = async () => {
@@ -105,6 +117,11 @@ export default function ParticipantScreen() {
                     if (prev.id !== newId) {
                         setSelectedLiveOption(null);
                         setQStartTime(Date.now()); // reset timer for new question
+                        if (data.timeLimit && data.timeLimit > 0) {
+                            setTimer(data.timeLimit);
+                        } else {
+                            setTimer(0);
+                        }
                     }
                     return { ...prev, ...data, id: newId };
                 });
@@ -304,9 +321,22 @@ export default function ParticipantScreen() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
-            className="flex flex-col flex-1 w-full max-w-md mx-auto justify-center pb-12"
+            className="flex flex-col flex-1 w-full max-w-md mx-auto py-4 sm:py-6"
         >
-            <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-6 md:p-8 shadow-2xl border border-white/20">
+            {/* Timer Bar */}
+            {liveState.timeLimit && liveState.timeLimit > 0 ? (
+                <div className="w-full bg-white/10 rounded-full h-3 mb-6 relative overflow-hidden backdrop-blur-sm self-start shadow-sm border border-white/10">
+                    <div
+                        className={`absolute left-0 top-0 h-full rounded-full transition-all duration-1000 ease-linear ${timer <= 5 ? 'bg-red-500' : timer <= 10 ? 'bg-amber-400' : 'bg-indigo-400'}`}
+                        style={{ width: `${(timer / liveState.timeLimit) * 100}%` }}
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center text-[10px] font-black text-white mix-blend-difference drop-shadow-md">
+                        {timer}s
+                    </div>
+                </div>
+            ) : null}
+
+            <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-6 md:p-8 shadow-2xl border border-white/20 flex-1 flex flex-col justify-center">
                 <h2 className="text-2xl sm:text-3xl font-bold text-white mb-8 leading-snug drop-shadow-sm text-center">
                     {liveState.title}
                 </h2>
@@ -325,8 +355,10 @@ export default function ParticipantScreen() {
                         if (reveal) {
                             if (isCorrect) {
                                 btnClass = 'border-emerald-400 bg-emerald-500/90 text-white shadow-lg ring-4 ring-emerald-500/30 scale-[1.02]';
+                                if (isSelected) btnClass += ' ring-offset-2 ring-offset-slate-900 border-dashed border-white'; // you got it right!
                             } else {
                                 btnClass = 'border-white/5 bg-white/5 text-white/30 cursor-not-allowed opacity-50';
+                                if (isSelected) btnClass = 'border-red-500/50 bg-red-500/20 text-red-200/50 cursor-not-allowed border-dashed'; // you picked this wrong
                             }
                         }
 
@@ -337,9 +369,10 @@ export default function ParticipantScreen() {
                                 disabled={selectedLiveOption !== null || reveal}
                                 className={`w-full p-4 sm:p-5 text-left rounded-2xl border-2 transition-all duration-300 transform active:scale-[0.98] ${btnClass}`}
                             >
-                                <div className="flex justify-between items-center">
-                                    <span className="text-lg font-semibold block break-words">{option.text}</span>
-                                    {reveal && isCorrect && <CheckCircle2 className="text-white shrink-0" size={24} />}
+                                <div className="flex justify-between items-center relative">
+                                    <span className="text-lg font-semibold block break-words pr-8">{option.text}</span>
+                                    {reveal && isCorrect && <CheckCircle2 className="text-white shrink-0 absolute right-0" size={24} />}
+                                    {reveal && !isCorrect && isSelected && <span className="text-red-400 text-sm font-bold absolute right-0">Bạn chọn</span>}
                                 </div>
                             </button>
                         );

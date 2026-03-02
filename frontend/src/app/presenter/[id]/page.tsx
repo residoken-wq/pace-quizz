@@ -179,6 +179,9 @@ export default function PresenterLiveView() {
             type: q.type,
             options: q.options,
             status: 'ACTIVE',
+            timeLimit: q.timeLimit || 0,
+            showCorrectAnswer: false,
+            showLeaderboard: false
         });
         if (q.timeLimit && q.timeLimit > 0) startTimer(q.timeLimit);
         else setTimer(0);
