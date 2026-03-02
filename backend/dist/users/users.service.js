@@ -54,13 +54,21 @@ let UsersService = class UsersService {
     async create(createUserDto) {
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(createUserDto.password, saltRounds);
-        return this.prisma.user.create({
-            data: {
-                ...createUserDto,
-                password: hashedPassword,
-            },
-            select: { id: true, email: true, name: true, role: true, createdAt: true },
-        });
+        try {
+            return await this.prisma.user.create({
+                data: {
+                    ...createUserDto,
+                    password: hashedPassword,
+                },
+                select: { id: true, email: true, name: true, role: true, createdAt: true },
+            });
+        }
+        catch (error) {
+            if (error.code === 'P2002') {
+                throw new common_1.ConflictException('Email already exists');
+            }
+            throw error;
+        }
     }
     findAll() {
         return this.prisma.user.findMany({
@@ -85,11 +93,19 @@ let UsersService = class UsersService {
         if (updateUserDto.password) {
             updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
         }
-        return this.prisma.user.update({
-            where: { id },
-            data: updateUserDto,
-            select: { id: true, email: true, name: true, role: true, createdAt: true },
-        });
+        try {
+            return await this.prisma.user.update({
+                where: { id },
+                data: updateUserDto,
+                select: { id: true, email: true, name: true, role: true, createdAt: true },
+            });
+        }
+        catch (error) {
+            if (error.code === 'P2002') {
+                throw new common_1.ConflictException('Email already exists');
+            }
+            throw error;
+        }
     }
     remove(id) {
         return this.prisma.user.delete({
