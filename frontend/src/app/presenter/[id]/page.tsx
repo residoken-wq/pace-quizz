@@ -9,9 +9,12 @@ import {
 import {
     Users, Play, Square, ChevronRight, ChevronLeft, QrCode, RotateCcw,
     Wifi, WifiOff, Clock, CheckCircle2, History, ArrowLeft, Loader2,
-    AlertTriangle, Sun, Moon
+    AlertTriangle, Sun, Moon, Trophy, Eye
 } from 'lucide-react';
 import QRCode from 'qrcode';
+import { motion, AnimatePresence } from 'framer-motion';
+import { PodiumLeaderboard } from '../components/PodiumLeaderboard';
+import { LiveQuestionChart } from '../components/LiveQuestionChart';
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
 
@@ -61,6 +64,11 @@ export default function PresenterLiveView() {
     const [activityLogs, setActivityLogs] = useState<any[]>([]);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
 
+    // Gamification states
+    const [showCorrectAnswer, setShowCorrectAnswer] = useState(false);
+    const [showLeaderboard, setShowLeaderboard] = useState(false);
+    const [leaderboard, setLeaderboard] = useState<any[]>([]);
+
     // Theme state
     const [theme, setTheme] = useState<'dark' | 'light'>('dark');
     const isDark = theme === 'dark';
@@ -74,7 +82,6 @@ export default function PresenterLiveView() {
                     const data = await res.json();
                     setSession(data);
                     setParticipantsCount(data.participants?.length || 0);
-                    // Always start in LOBBY for CREATED and ACTIVE sessions to show QR code 
                     if (data.status === 'FINISHED') setPhase('RESULTS');
                 }
             } catch (e) { console.error(e); }
@@ -136,6 +143,9 @@ export default function PresenterLiveView() {
     const handleEnd = async () => {
         if (timerRef.current) clearInterval(timerRef.current);
         await fetch(`${getApiUrl()}/sessions/${sessionId}/end`, { method: 'POST', headers: headers() });
+        setShowCorrectAnswer(false);
+        setShowLeaderboard(false);
+        await loadLeaderboard();
         setPhase('RESULTS');
     };
 
@@ -146,6 +156,8 @@ export default function PresenterLiveView() {
         setPhase('LOBBY');
         setCurrentQIdx(0);
         setShowResetConfirm(false);
+        setShowCorrectAnswer(false);
+        setShowLeaderboard(false);
     };
 
     const broadcastQuestion = (idx: number) => {
@@ -166,8 +178,34 @@ export default function PresenterLiveView() {
 
     const goToQuestion = (idx: number) => {
         if (!session || idx < 0 || idx >= session.questions.length) return;
+        setShowCorrectAnswer(false);
+        setShowLeaderboard(false);
         setCurrentQIdx(idx);
         broadcastQuestion(idx);
+    };
+
+    const loadLeaderboard = async () => {
+        const res = await fetch(`${getApiUrl()}/sessions/${sessionId}/leaderboard`, { headers: headers() });
+        if (res.ok) setLeaderboard(await res.json());
+    };
+
+    const handleNextFlow = async () => {
+        const questions = session?.questions || [];
+        const currentQ = questions[currentQIdx];
+        const hasCorrectAnswer = currentQ?.options?.some((o: any) => o.isCorrect);
+
+        if (hasCorrectAnswer && !showCorrectAnswer) {
+            setShowCorrectAnswer(true);
+        } else if (!showLeaderboard) {
+            await loadLeaderboard();
+            setShowLeaderboard(true);
+        } else {
+            if (currentQIdx >= questions.length - 1) {
+                handleEnd();
+            } else {
+                goToQuestion(currentQIdx + 1);
+            }
+        }
     };
 
     const fetchHistory = async () => {
@@ -185,12 +223,15 @@ export default function PresenterLiveView() {
     const currentVotes = currentQ ? (votes[currentQ.id] || {}) : {};
 
     const chartData = currentQ?.options?.map((opt: any, index: number) => ({
+        id: opt.id,
         name: String.fromCharCode(65 + index), // A, B, C, D instead of full text
         fullText: opt.text || 'Option',
+        isCorrect: opt.isCorrect,
         votes: currentVotes[opt.id] || 0,
     })) || [];
 
     const totalVotes = chartData.reduce((s: number, d: any) => s + d.votes, 0);
+    const hasCorrectAnswer = currentQ?.options?.some((o: any) => o.isCorrect);
 
     if (isLoading) {
         return (
@@ -291,72 +332,52 @@ export default function PresenterLiveView() {
             {phase === 'LIVE' && session?.type !== 'SURVEY' && currentQ && (
                 <>
                     <main className="flex-1 flex flex-col items-center justify-center p-6 sm:p-12 overflow-y-auto">
-                        <div className="w-full max-w-5xl">
-                            {/* Question number + timer */}
-                            <div className="flex items-center justify-between mb-6">
-                                <span className="text-sm font-bold text-indigo-500 bg-indigo-500/10 dark:bg-indigo-500/20 px-3 py-1 rounded-lg border border-indigo-500/20">
-                                    Câu {currentQIdx + 1} / {questions.length}
-                                </span>
-                                {timer > 0 && (
-                                    <div className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-lg border ${timer <= 5 ? 'bg-red-500/10 text-red-500 border-red-500/30 animate-pulse' : isDark ? 'bg-white/5 text-white/70 border-white/10' : 'bg-slate-100 text-slate-700 border-slate-200'}`}>
-                                        <Clock size={18} />
-                                        {timer}s
-                                    </div>
-                                )}
-                                <span className={`text-xs font-semibold ${secondaryTextClass}`}>
-                                    {totalVotes} phiếu
-                                </span>
-                            </div>
-
-                            {/* Question title */}
-                            <h2 className="text-3xl sm:text-4xl font-bold text-center mb-10 leading-snug">
-                                {currentQ.title}
-                            </h2>
-
-                            <div className="flex flex-col gap-8 lg:flex-row lg:items-center">
-                                {/* Bar chart */}
-                                <div className={`h-[350px] flex-1 rounded-2xl p-4 sm:p-6 ${cardBgClass}`}>
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <BarChart data={chartData} margin={{ top: 10, right: 20, left: 10, bottom: 5 }}>
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? "#ffffff10" : "#cbd5e1"} />
-                                            <XAxis dataKey="name" tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 16, fontWeight: 700 }} axisLine={false} tickLine={false} />
-                                            <YAxis allowDecimals={false} tick={{ fill: isDark ? '#64748b' : '#94a3b8', fontSize: 13 }} axisLine={false} tickLine={false} />
-                                            <Tooltip
-                                                cursor={{ fill: isDark ? '#ffffff08' : '#f1f5f9' }}
-                                                contentStyle={{ backgroundColor: isDark ? '#1e293b' : '#ffffff', border: isDark ? '1px solid #334155' : '1px solid #e2e8f0', borderRadius: '12px', fontSize: 14, fontWeight: 600, color: isDark ? '#f8fafc' : '#0f172a' }}
-                                                labelStyle={{ color: isDark ? '#94a3b8' : '#64748b', marginBottom: '4px' }}
-                                            />
-                                            <Bar dataKey="votes" radius={[10, 10, 0, 0]} animationDuration={600} barSize={60}>
-                                                {chartData.map((_: any, index: number) => (
-                                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                                ))}
-                                            </Bar>
-                                        </BarChart>
-                                    </ResponsiveContainer>
-                                </div>
-
-                                {/* Answers Legend */}
-                                <div className={`flex-[0.8] rounded-2xl p-6 ${cardBgClass} self-stretch flex flex-col justify-center`}>
-                                    <h3 className={`text-sm font-bold uppercase tracking-wider mb-5 ${secondaryTextClass}`}>Các Đáp Án</h3>
-                                    <div className="space-y-4">
-                                        {chartData.map((data: any, index: number) => (
-                                            <div key={index} className="flex items-start gap-4 p-3 rounded-lg hover:bg-slate-500/5 transition-colors">
-                                                <div
-                                                    className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 text-white font-black text-lg shadow-sm"
-                                                    style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                                                >
-                                                    {data.name}
-                                                </div>
-                                                <div className="flex-1 mt-0.5 min-w-0">
-                                                    <p className="text-base font-semibold break-words leading-relaxed">{data.fullText}</p>
-                                                    <p className={`text-sm mt-1 font-medium ${secondaryTextClass}`}>{data.votes} phiếu</p>
-                                                </div>
+                        <AnimatePresence mode="wait">
+                            {showLeaderboard ? (
+                                <PodiumLeaderboard
+                                    leaderboard={leaderboard}
+                                    isDark={isDark}
+                                    secondaryTextClass={secondaryTextClass}
+                                />
+                            ) : (
+                                <motion.div
+                                    key="question"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    className="w-full max-w-5xl"
+                                >
+                                    {/* Question number + timer */}
+                                    <div className="flex items-center justify-between mb-6">
+                                        <span className="text-sm font-bold text-indigo-500 bg-indigo-500/10 dark:bg-indigo-500/20 px-3 py-1 rounded-lg border border-indigo-500/20">
+                                            Câu {currentQIdx + 1} / {questions.length}
+                                        </span>
+                                        {timer > 0 && (
+                                            <div className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-lg border ${timer <= 5 ? 'bg-red-500/10 text-red-500 border-red-500/30 animate-pulse' : isDark ? 'bg-white/5 text-white/70 border-white/10' : 'bg-slate-100 text-slate-700 border-slate-200'}`}>
+                                                <Clock size={18} />
+                                                {timer}s
                                             </div>
-                                        ))}
+                                        )}
+                                        <span className={`text-xs font-semibold ${secondaryTextClass}`}>
+                                            {totalVotes} phiếu
+                                        </span>
                                     </div>
-                                </div>
-                            </div>
-                        </div>
+
+                                    {/* Question title */}
+                                    <h2 className={`text-3xl sm:text-4xl font-bold text-center mb-10 leading-snug ${showCorrectAnswer ? 'opacity-50' : ''}`}>
+                                        {currentQ.title}
+                                    </h2>
+
+                                    <LiveQuestionChart
+                                        chartData={chartData}
+                                        showCorrectAnswer={showCorrectAnswer}
+                                        isDark={isDark}
+                                        cardBgClass={cardBgClass}
+                                        secondaryTextClass={secondaryTextClass}
+                                    />
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </main>
 
                     {/* Bottom control bar */}
@@ -366,35 +387,18 @@ export default function PresenterLiveView() {
                         </span>
                         <div className="flex items-center gap-3">
                             <button
-                                onClick={() => goToQuestion(currentQIdx - 1)}
-                                disabled={currentQIdx === 0}
-                                className={`p-3 rounded-xl disabled:opacity-30 transition-all ${isDark ? 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 border border-slate-200'}`}
+                                onClick={handleNextFlow}
+                                className="flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg active:scale-[0.97]"
                             >
-                                <ChevronLeft size={20} />
-                            </button>
-
-                            {currentQIdx === questions.length - 1 ? (
-                                <button
-                                    onClick={handleEnd}
-                                    className="flex items-center gap-2 bg-gradient-to-r from-red-500 to-rose-600 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg active:scale-[0.97]"
-                                >
-                                    <Square size={18} /> Kết thúc
-                                </button>
-                            ) : (
-                                <button
-                                    onClick={() => goToQuestion(currentQIdx + 1)}
-                                    className="flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-blue-600 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg active:scale-[0.97]"
-                                >
-                                    Câu tiếp <ChevronRight size={18} />
-                                </button>
-                            )}
-
-                            <button
-                                onClick={() => goToQuestion(currentQIdx + 1)}
-                                disabled={currentQIdx >= questions.length - 1}
-                                className={`p-3 rounded-xl disabled:opacity-30 transition-all ${isDark ? 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 border border-slate-200'}`}
-                            >
-                                <ChevronRight size={20} />
+                                {(!showCorrectAnswer && hasCorrectAnswer) ? (
+                                    <><Eye size={18} /> Xem Đáp Án</>
+                                ) : !showLeaderboard ? (
+                                    <><Trophy size={18} /> Bảng Xếp Hạng</>
+                                ) : currentQIdx >= questions.length - 1 ? (
+                                    <><Square size={18} /> Kết thúc</>
+                                ) : (
+                                    <>Câu tiếp <ChevronRight size={18} /></>
+                                )}
                             </button>
                         </div>
                         <div />
@@ -429,12 +433,47 @@ export default function PresenterLiveView() {
 
             {/* ═══ RESULTS PHASE ═══ */}
             {phase === 'RESULTS' && (
-                <main className="flex-1 flex flex-col items-center justify-center p-8">
-                    <div className="text-center mb-10">
-                        <CheckCircle2 size={64} className="mx-auto text-emerald-500 mb-4" />
-                        <h2 className="text-4xl font-black mb-2">Đã kết thúc!</h2>
-                        <p className={`text-lg ${secondaryTextClass}`}>Session đã được lưu. Bạn có thể xem kết quả hoặc reset.</p>
-                    </div>
+                <main className="flex-1 flex flex-col items-center justify-center p-8 overflow-y-auto">
+                    {session?.type !== 'SURVEY' && leaderboard.length > 0 ? (
+                        <div className="w-full max-w-5xl">
+                            <div className="text-center mb-10">
+                                <Trophy size={64} className="mx-auto text-amber-500 mb-4" />
+                                <h2 className="text-4xl sm:text-6xl font-black text-amber-500 tracking-tight mb-2">Nhà Vô Địch</h2>
+                                <p className={`text-xl ${secondaryTextClass}`}>Cảm ơn tất cả các bạn đã tham gia!</p>
+                            </div>
+
+                            <div className="flex justify-center items-end gap-4 mb-16 h-64">
+                                {leaderboard[1] && (
+                                    <div className="flex flex-col items-center animate-bounce" style={{ animationDelay: '0.2s' }}>
+                                        <div className="text-6xl mb-2">{leaderboard[1].mascot}</div>
+                                        <div className="text-xl font-black text-slate-300">{leaderboard[1].nickname}</div>
+                                        <div className="w-24 h-32 bg-slate-300 mt-2 rounded-t-xl flex justify-center items-start pt-4"><span className="text-4xl font-black text-slate-500">2</span></div>
+                                    </div>
+                                )}
+                                {leaderboard[0] && (
+                                    <div className="flex flex-col items-center z-10 animate-bounce">
+                                        <div className="text-7xl mb-2">{leaderboard[0].mascot}</div>
+                                        <div className="text-2xl font-black text-amber-500">{leaderboard[0].nickname}</div>
+                                        <div className="text-sm font-bold text-amber-600/50 mb-1">{leaderboard[0].correctAnswers * 1000 - Math.round(leaderboard[0].totalTimeTaken / 100)} pts</div>
+                                        <div className="w-32 h-44 bg-gradient-to-t from-amber-600 to-amber-400 mt-2 rounded-t-xl flex justify-center items-start pt-4"><span className="text-6xl font-black text-amber-100">1</span></div>
+                                    </div>
+                                )}
+                                {leaderboard[2] && (
+                                    <div className="flex flex-col items-center animate-bounce" style={{ animationDelay: '0.4s' }}>
+                                        <div className="text-5xl mb-2">{leaderboard[2].mascot}</div>
+                                        <div className="text-lg font-black text-orange-400">{leaderboard[2].nickname}</div>
+                                        <div className="w-24 h-24 bg-orange-400 mt-2 rounded-t-xl flex justify-center items-start pt-4"><span className="text-3xl font-black text-orange-200">3</span></div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="text-center mb-10">
+                            <CheckCircle2 size={64} className="mx-auto text-emerald-500 mb-4" />
+                            <h2 className="text-4xl font-black mb-2">Đã kết thúc!</h2>
+                            <p className={`text-lg ${secondaryTextClass}`}>Session đã được lưu. Bạn có thể xem kết quả hoặc reset.</p>
+                        </div>
+                    )}
 
                     <div className="flex gap-3">
                         <button

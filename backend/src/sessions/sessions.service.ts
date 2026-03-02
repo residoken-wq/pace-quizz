@@ -156,5 +156,85 @@ export class SessionsService {
       };
     });
   }
+
+  // ─── Gamification & Participants ───
+
+  async joinSession(pin: string, nickname: string, mascot: string) {
+    const session = await this.findByPin(pin);
+    if (!session) throw new NotFoundException(`Session with PIN ${pin} not found`);
+
+    // UPSERT participant (find existing by nickname in session, or create new)
+    const existing = await this.prisma.participant.findFirst({
+      where: { sessionId: session.id, nickname }
+    });
+
+    if (existing) {
+      if (existing.mascot !== mascot) {
+        return this.prisma.participant.update({
+          where: { id: existing.id },
+          data: { mascot }
+        });
+      }
+      return existing;
+    }
+
+    return this.prisma.participant.create({
+      data: {
+        sessionId: session.id,
+        nickname,
+        mascot
+      }
+    });
+  }
+
+  async getLeaderboard(sessionId: string) {
+    const participants = await this.prisma.participant.findMany({
+      where: { sessionId },
+      include: {
+        responses: {
+          include: { question: true }
+        }
+      }
+    });
+
+    // Calculate score for each participant
+    const leaderboard = participants.map(p => {
+      let correctAnswers = 0;
+      let totalTimeTaken = 0;
+
+      p.responses.forEach(r => {
+        const qOptions = (r.question.options as any[]) || [];
+        const answer = r.answer as any;
+
+        // Find if the chosen option is marked as correct
+        const chosenOption = qOptions.find(opt => opt.id === answer?.optionId);
+        if (chosenOption && chosenOption.isCorrect) {
+          correctAnswers++;
+        }
+
+        if (r.timeTaken) {
+          totalTimeTaken += r.timeTaken;
+        }
+      });
+
+      return {
+        id: p.id,
+        nickname: p.nickname,
+        mascot: p.mascot,
+        correctAnswers,
+        totalTimeTaken
+      };
+    });
+
+    // Sort: highest correct answers first, then lowest time taken
+    return leaderboard
+      .sort((a, b) => {
+        if (b.correctAnswers !== a.correctAnswers) {
+          return b.correctAnswers - a.correctAnswers; // Descending score
+        }
+        return a.totalTimeTaken - b.totalTimeTaken; // Ascending time
+      })
+      .slice(0, 5); // Top 5
+  }
 }
 

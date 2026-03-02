@@ -8,6 +8,7 @@ import { QuestionsModule } from './questions/questions.module';
 import { EventsGateway } from './events/events.gateway';
 import { AuthModule } from './auth/auth.module';
 import { UploadModule } from './upload/upload.module';
+import { ResponsesModule } from './responses/responses.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 
@@ -19,6 +20,7 @@ import { join } from 'path';
     QuestionsModule,
     AuthModule,
     UploadModule,
+    ResponsesModule,
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'uploads'),
       serveRoot: '/uploads',

@@ -60,6 +60,7 @@ model Participant {
   sessionId String
   session   Session    @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   nickname  String?
+  mascot    String?
   createdAt DateTime   @default(now())
   responses Response[]
 
@@ -73,7 +74,7 @@ model Question {
   title     String
   order     Int
   type      QuestionType @default(MULTIPLE_CHOICE)
-  options   Json // e.g. [{id: "1", text: "Option A"}]
+  options   Json // e.g. [{id: "1", text: "Option A", isCorrect: true}]
   timeLimit Int? // limit in seconds, for LIVE mode
   tags      Tag[]        @relation("QuestionTags")
   responses Response[]
@@ -101,6 +102,7 @@ model Response {
   question      Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
   answer        Json // Stores the selected optionIds or text
   score         Int? // For behavioral scoring
+  timeTaken     Int? // Time taken to answer in milliseconds
   createdAt     DateTime    @default(now())
 }
 
