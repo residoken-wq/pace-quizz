@@ -16,7 +16,7 @@ const OPTION_THEMES = [
     { bg: 'bg-pink-50', border: 'border-pink-300', accent: 'bg-pink-500', label: 'bg-pink-500', letter: 'text-white' },
 ];
 
-export function MultipleChoiceEditor({ options, onChange }: { options: Option[]; onChange: (opts: Option[]) => void }) {
+export function MultipleChoiceEditor({ options, onChange, isPoll }: { options: Option[]; onChange: (opts: Option[]) => void; isPoll?: boolean }) {
     const addOption = () => {
         onChange([...options, { id: crypto.randomUUID(), text: '', isCorrect: false }]);
     };
@@ -38,9 +38,9 @@ export function MultipleChoiceEditor({ options, onChange }: { options: Option[];
         <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-2.5">
-                    <span className="text-lg">🎯</span>
-                    <label className="text-sm font-bold text-slate-700">Các đáp án</label>
-                    <span className="text-[11px] text-slate-400 font-medium">(nhấn ● để chọn đáp án đúng)</span>
+                    <span className="text-lg">{isPoll ? '📊' : '🎯'}</span>
+                    <label className="text-sm font-bold text-slate-700">{isPoll ? 'Các lựa chọn khảo sát' : 'Các đáp án'}</label>
+                    {!isPoll && <span className="text-[11px] text-slate-400 font-medium">(nhấn ● để chọn đáp án đúng)</span>}
                 </div>
                 <button
                     onClick={addOption}
@@ -57,27 +57,29 @@ export function MultipleChoiceEditor({ options, onChange }: { options: Option[];
                     return (
                         <div
                             key={opt.id}
-                            className={`flex items-start gap-3 p-3.5 rounded-xl border-2 transition-all ${opt.isCorrect
+                            className={`flex items-start gap-3 p-3.5 rounded-xl border-2 transition-all ${!isPoll && opt.isCorrect
                                 ? 'border-emerald-400 bg-emerald-50 shadow-md shadow-emerald-100'
                                 : `${theme.border} ${theme.bg} hover:shadow-sm`
                                 }`}
                         >
                             {/* Letter Badge  */}
-                            <div className={`mt-0.5 w-9 h-9 rounded-lg ${opt.isCorrect ? 'bg-emerald-500' : theme.label} flex items-center justify-center shrink-0 shadow-sm`}>
+                            <div className={`mt-0.5 w-9 h-9 rounded-lg ${!isPoll && opt.isCorrect ? 'bg-emerald-500' : theme.label} flex items-center justify-center shrink-0 shadow-sm`}>
                                 <span className="text-white text-sm font-black">{letter}</span>
                             </div>
 
                             {/* Correct toggle */}
-                            <button
-                                onClick={() => toggleCorrect(idx)}
-                                className={`mt-1.5 shrink-0 w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all ${opt.isCorrect
-                                    ? 'border-emerald-500 bg-emerald-500 text-white shadow-sm shadow-emerald-200'
-                                    : 'border-slate-300 hover:border-emerald-400 hover:bg-emerald-50'
-                                    }`}
-                                title="Đánh dấu đáp án đúng"
-                            >
-                                {opt.isCorrect && <CheckCircle2 size={15} />}
-                            </button>
+                            {!isPoll && (
+                                <button
+                                    onClick={() => toggleCorrect(idx)}
+                                    className={`mt-1.5 shrink-0 w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all ${opt.isCorrect
+                                        ? 'border-emerald-500 bg-emerald-500 text-white shadow-sm shadow-emerald-200'
+                                        : 'border-slate-300 hover:border-emerald-400 hover:bg-emerald-50'
+                                        }`}
+                                    title="Đánh dấu đáp án đúng"
+                                >
+                                    {opt.isCorrect && <CheckCircle2 size={15} />}
+                                </button>
+                            )}
 
                             {/* Text input */}
                             <textarea
@@ -89,7 +91,7 @@ export function MultipleChoiceEditor({ options, onChange }: { options: Option[];
                                 }}
                                 placeholder={`Nhập đáp án ${letter}...`}
                                 rows={1}
-                                className={`flex-1 py-1.5 px-3 rounded-lg border-none bg-transparent outline-none text-sm font-medium resize-none leading-relaxed min-h-[40px] overflow-hidden ${opt.isCorrect ? 'text-emerald-900 placeholder:text-emerald-300' : 'text-slate-800 placeholder:text-slate-300'}`}
+                                className={`flex-1 py-1.5 px-3 rounded-lg border-none bg-transparent outline-none text-sm font-medium resize-none leading-relaxed min-h-[40px] overflow-hidden ${!isPoll && opt.isCorrect ? 'text-emerald-900 placeholder:text-emerald-300' : 'text-slate-800 placeholder:text-slate-300'}`}
                             />
 
                             {/* Delete button */}
@@ -108,7 +110,7 @@ export function MultipleChoiceEditor({ options, onChange }: { options: Option[];
             </div>
 
             {/* Correct answer reminder */}
-            {!options.some(o => o.isCorrect) && (
+            {!isPoll && !options.some(o => o.isCorrect) && (
                 <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center gap-2">
                     <AlertCircle size={16} className="text-amber-600 shrink-0" />
                     <p className="text-xs text-amber-700 font-medium">Bạn chưa chọn đáp án đúng. Nhấn vào nút tròn ● bên cạnh đáp án để đánh dấu.</p>

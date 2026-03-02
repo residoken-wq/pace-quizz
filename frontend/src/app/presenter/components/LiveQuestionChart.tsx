@@ -9,13 +9,17 @@ export function LiveQuestionChart({
     showCorrectAnswer,
     isDark,
     cardBgClass,
-    secondaryTextClass
+    secondaryTextClass,
+    isPoll,
+    totalVotes = 0
 }: {
     chartData: any[];
     showCorrectAnswer: boolean;
     isDark: boolean;
     cardBgClass: string;
     secondaryTextClass: string;
+    isPoll?: boolean;
+    totalVotes?: number;
 }) {
     return (
         <div className="flex flex-col gap-8 lg:flex-row lg:items-center">
@@ -30,6 +34,14 @@ export function LiveQuestionChart({
                             cursor={{ fill: isDark ? '#ffffff08' : '#f1f5f9' }}
                             contentStyle={{ backgroundColor: isDark ? '#1e293b' : '#ffffff', border: isDark ? '1px solid #334155' : '1px solid #e2e8f0', borderRadius: '12px', fontSize: 14, fontWeight: 600, color: isDark ? '#f8fafc' : '#0f172a' }}
                             labelStyle={{ color: isDark ? '#94a3b8' : '#64748b', marginBottom: '4px' }}
+                            formatter={(value: number | string | Array<number | string> | undefined) => {
+                                const numValue = typeof value === 'number' ? value : 0;
+                                if (isPoll && totalVotes && totalVotes > 0) {
+                                    const pct = Math.round((numValue / totalVotes) * 100);
+                                    return [`${numValue} phiếu (${pct}%)`, 'Lựa chọn'];
+                                }
+                                return [`${numValue} phiếu`, 'Bình chọn'];
+                            }}
                         />
                         <Bar dataKey="votes" radius={[10, 10, 0, 0]} animationDuration={600} barSize={60}>
                             {chartData.map((d: any, index: number) => {
@@ -49,8 +61,9 @@ export function LiveQuestionChart({
                 <h3 className={`text-sm font-bold uppercase tracking-wider mb-5 ${secondaryTextClass}`}>Các Đáp Án</h3>
                 <div className="space-y-4">
                     {chartData.map((data: any, index: number) => {
-                        const isActiveHighlight = showCorrectAnswer && data.isCorrect;
-                        const isDimmed = showCorrectAnswer && !data.isCorrect;
+                        const isActiveHighlight = showCorrectAnswer && data.isCorrect && !isPoll;
+                        const isDimmed = showCorrectAnswer && !data.isCorrect && !isPoll;
+                        const percentage = (isPoll && totalVotes > 0) ? Math.round((data.votes / totalVotes) * 100) : 0;
 
                         return (
                             <div key={index} className={`flex items-start gap-4 p-3 rounded-xl transition-all ${isActiveHighlight ? 'bg-emerald-500/20 ring-2 ring-emerald-500 scale-[1.02]' : isDimmed ? 'opacity-30' : 'hover:bg-slate-500/5'}`}>
@@ -64,7 +77,14 @@ export function LiveQuestionChart({
                                     <p className={`text-base break-words leading-relaxed ${isActiveHighlight ? 'font-black text-emerald-500' : 'font-semibold'}`}>
                                         {data.fullText}
                                     </p>
-                                    <p className={`text-sm mt-1 font-bold ${isActiveHighlight ? 'text-emerald-600/70' : secondaryTextClass}`}>{data.votes} phiếu</p>
+                                    <div className="flex items-center gap-3 mt-1">
+                                        <p className={`text-sm font-bold ${isActiveHighlight ? 'text-emerald-600/70' : secondaryTextClass}`}>{data.votes} phiếu</p>
+                                        {isPoll && (
+                                            <span className="text-sm font-black text-rose-500/80 bg-rose-500/10 px-2 py-0.5 rounded-md">
+                                                {percentage}%
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                                 {isActiveHighlight && <CheckCircle2 className="text-emerald-500 mt-2" size={24} />}
                             </div>

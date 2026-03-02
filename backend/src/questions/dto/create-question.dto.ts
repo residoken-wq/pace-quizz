@@ -11,8 +11,8 @@ export class CreateQuestionDto {
     order: number;
 
     @IsOptional()
-    @IsEnum(['MULTIPLE_CHOICE', 'WORD_CLOUD', 'RATING_SCALE'])
-    type?: 'MULTIPLE_CHOICE' | 'WORD_CLOUD' | 'RATING_SCALE';
+    @IsEnum(['MULTIPLE_CHOICE', 'WORD_CLOUD', 'RATING_SCALE', 'POLL'])
+    type?: 'MULTIPLE_CHOICE' | 'WORD_CLOUD' | 'RATING_SCALE' | 'POLL';
 
     @IsOptional()
     options?: any; // JSON array of options

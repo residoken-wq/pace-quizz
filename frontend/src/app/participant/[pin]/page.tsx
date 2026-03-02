@@ -6,9 +6,9 @@ import { useSocket } from '@/context/SocketProvider';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, CheckCircle2 } from 'lucide-react';
 
-type QuestionType = 'MULTIPLE_CHOICE' | 'WORD_CLOUD' | 'RATING_SCALE';
+type QuestionType = 'MULTIPLE_CHOICE' | 'WORD_CLOUD' | 'RATING_SCALE' | 'POLL';
 
-type QuestionState = {
+interface QuestionState {
     id: string;
     title: string;
     type: QuestionType;
@@ -384,12 +384,19 @@ export default function ParticipantScreen() {
                                     : 'border-white/20 bg-white/10 text-white hover:bg-white/20 hover:border-white/40';
 
                             if (reveal) {
-                                if (isCorrect) {
-                                    btnClass = 'border-emerald-400 bg-emerald-500/90 text-white shadow-lg ring-4 ring-emerald-500/30 scale-[1.02]';
-                                    if (isSelected) btnClass += ' ring-offset-2 ring-offset-slate-900 border-dashed border-white'; // you got it right!
+                                if (liveState.type === 'POLL') {
+                                    // For polls, just highlight the user's pick slightly if revealed, but no right/wrong coloring
+                                    btnClass = isSelected
+                                        ? 'border-indigo-400 bg-indigo-500/90 text-white shadow-lg ring-4 ring-indigo-500/30 scale-[1.02]'
+                                        : 'border-white/10 bg-white/5 text-white/50 cursor-not-allowed opacity-50';
                                 } else {
-                                    btnClass = 'border-white/5 bg-white/5 text-white/30 cursor-not-allowed opacity-50';
-                                    if (isSelected) btnClass = 'border-red-500/50 bg-red-500/20 text-red-200/50 cursor-not-allowed border-dashed'; // you picked this wrong
+                                    if (isCorrect) {
+                                        btnClass = 'border-emerald-400 bg-emerald-500/90 text-white shadow-lg ring-4 ring-emerald-500/30 scale-[1.02]';
+                                        if (isSelected) btnClass += ' ring-offset-2 ring-offset-slate-900 border-dashed border-white'; // you got it right!
+                                    } else {
+                                        btnClass = 'border-white/5 bg-white/5 text-white/30 cursor-not-allowed opacity-50';
+                                        if (isSelected) btnClass = 'border-red-500/50 bg-red-500/20 text-red-200/50 cursor-not-allowed border-dashed'; // you picked this wrong
+                                    }
                                 }
                             }
 
@@ -402,8 +409,9 @@ export default function ParticipantScreen() {
                                 >
                                     <div className="flex justify-between items-center relative">
                                         <span className="text-lg font-semibold block break-words pr-8">{option.text}</span>
-                                        {reveal && isCorrect && <CheckCircle2 className="text-white shrink-0 absolute right-0" size={24} />}
-                                        {reveal && !isCorrect && isSelected && <span className="text-red-400 text-sm font-bold absolute right-0">Bạn chọn</span>}
+                                        {reveal && isCorrect && liveState.type !== 'POLL' && <CheckCircle2 className="text-white shrink-0 absolute right-0" size={24} />}
+                                        {reveal && !isCorrect && isSelected && liveState.type !== 'POLL' && <span className="text-red-400 text-sm font-bold absolute right-0">Bạn chọn</span>}
+                                        {reveal && isSelected && liveState.type === 'POLL' && <span className="text-white text-sm font-bold absolute right-0">Bạn chọn</span>}
                                     </div>
                                 </button>
                             );

@@ -4,12 +4,12 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import {
     ArrowLeft, Plus, Save, Trash2, GripVertical, CheckCircle2, Clock,
-    MessageSquare, BarChart3, Cloud, Star, AlertCircle, Loader2, Sparkles, Hash
+    MessageSquare, BarChart2, Cloud, Star, AlertCircle, Loader2, Sparkles, Hash
 } from 'lucide-react';
 import { MultipleChoiceEditor } from '../components/MultipleChoiceEditor';
 import { RatingScaleEditor } from '../components/RatingScaleEditor';
 
-type QuestionType = 'MULTIPLE_CHOICE' | 'WORD_CLOUD' | 'RATING_SCALE';
+type QuestionType = 'MULTIPLE_CHOICE' | 'WORD_CLOUD' | 'RATING_SCALE' | 'POLL';
 
 type Option = {
     id: string;
@@ -74,6 +74,13 @@ const QUESTION_TYPE_CONFIG: Record<QuestionType, {
         gradient: 'from-amber-500 to-orange-600',
         border: 'border-amber-200',
     },
+    POLL: {
+        label: 'Khảo sát', icon: BarChart2, emoji: '📊',
+        color: 'text-rose-600', textDark: 'text-rose-800',
+        bg: 'bg-rose-50', bgSolid: 'bg-rose-600',
+        gradient: 'from-rose-500 to-pink-600',
+        border: 'border-rose-200',
+    }
 };
 
 /* ─── Vivid option colors (A, B, C, D…) ─── */
@@ -481,7 +488,7 @@ export default function SessionEditor() {
                                             <button
                                                 key={type}
                                                 onClick={() => {
-                                                    const newOptions = type === 'MULTIPLE_CHOICE'
+                                                    const newOptions = (type === 'MULTIPLE_CHOICE' || type === 'POLL')
                                                         ? [
                                                             { id: crypto.randomUUID(), text: '', isCorrect: false },
                                                             { id: crypto.randomUUID(), text: '', isCorrect: false },
@@ -511,6 +518,14 @@ export default function SessionEditor() {
                                 <MultipleChoiceEditor
                                     options={Array.isArray(selectedQuestion.options) ? selectedQuestion.options : []}
                                     onChange={(options) => updateQuestion(selectedIdx, { options })}
+                                />
+                            )}
+
+                            {selectedQuestion.type === 'POLL' && (
+                                <MultipleChoiceEditor
+                                    options={Array.isArray(selectedQuestion.options) ? selectedQuestion.options : []}
+                                    onChange={(options) => updateQuestion(selectedIdx, { options })}
+                                    isPoll={true}
                                 />
                             )}
 

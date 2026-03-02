@@ -424,6 +424,8 @@ export default function PresenterLiveView() {
                                             isDark={isDark}
                                             cardBgClass={cardBgClass}
                                             secondaryTextClass={secondaryTextClass}
+                                            isPoll={currentQ.type === 'POLL'}
+                                            totalVotes={totalVotes}
                                         />
                                     )}
                                 </motion.div>
