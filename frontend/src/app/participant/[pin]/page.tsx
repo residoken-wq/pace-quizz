@@ -13,7 +13,10 @@ type QuestionState = {
     title: string;
     type: QuestionType;
     options: any[];
-    status: 'WAITING' | 'ACTIVE' | 'FINISHED';
+    status: 'WAITING' | 'ACTIVE' | 'FINISHED' | 'CREATED';
+    showCorrectAnswer?: boolean;
+    showLeaderboard?: boolean;
+    leaderboard?: any[];
 };
 
 const MASCOTS = ['🐶', '🐱', '🦊', '🐼', '🐨', '🐯', '🐰', '🐸', '🦄', '🦖', '🐙', '👾'];
@@ -80,13 +83,31 @@ export default function ParticipantScreen() {
         socket.emit('join_session', { sessionId: pin, role: 'participant' });
 
         socket.on('state_sync', (data: any) => {
+            if (data.status === 'CREATED') {
+                // Return to join screen
+                setHasJoined(false);
+                if (sessionData?.type === 'SURVEY') {
+                    setSurveyAnswers({});
+                    setSurveyIdx(0);
+                    setIsSurveyFinished(false);
+                } else {
+                    setSelectedLiveOption(null);
+                }
+                return;
+            }
+
             if (sessionData?.type === 'SURVEY') {
                 if (data.status === 'ACTIVE') setLiveState(prev => ({ ...prev, status: 'ACTIVE' }));
                 else if (data.status === 'FINISHED') setLiveState(prev => ({ ...prev, status: 'FINISHED' }));
             } else {
-                setLiveState({ ...data, id: data.questionId || data.id });
-                setSelectedLiveOption(null);
-                setQStartTime(Date.now()); // reset timer for new question
+                setLiveState(prev => {
+                    const newId = data.questionId || data.id;
+                    if (prev.id !== newId) {
+                        setSelectedLiveOption(null);
+                        setQStartTime(Date.now()); // reset timer for new question
+                    }
+                    return { ...data, id: newId };
+                });
             }
         });
 
@@ -290,21 +311,39 @@ export default function ParticipantScreen() {
                     {liveState.title}
                 </h2>
                 <div className="space-y-4">
-                    {liveState.options.map((option, idx) => (
-                        <button
-                            key={option.id || idx}
-                            onClick={() => handleLiveVote(option.id)}
-                            disabled={selectedLiveOption !== null}
-                            className={`w-full p-4 sm:p-5 text-left rounded-2xl border-2 transition-all duration-300 transform active:scale-[0.98] ${selectedLiveOption === option.id
-                                ? 'border-indigo-400 bg-indigo-500/90 text-white shadow-lg ring-4 ring-indigo-500/30'
-                                : selectedLiveOption !== null
-                                    ? 'border-white/10 bg-white/5 text-white/50 cursor-not-allowed'
-                                    : 'border-white/20 bg-white/10 text-white hover:bg-white/20 hover:border-white/40'
-                                }`}
-                        >
-                            <span className="text-lg font-semibold block break-words">{option.text}</span>
-                        </button>
-                    ))}
+                    {liveState.options.map((option, idx) => {
+                        const isCorrect = option.isCorrect;
+                        const reveal = liveState.showCorrectAnswer;
+                        const isSelected = selectedLiveOption === option.id;
+
+                        let btnClass = isSelected
+                            ? 'border-indigo-400 bg-indigo-500/90 text-white shadow-lg ring-4 ring-indigo-500/30'
+                            : selectedLiveOption !== null
+                                ? 'border-white/10 bg-white/5 text-white/50 cursor-not-allowed'
+                                : 'border-white/20 bg-white/10 text-white hover:bg-white/20 hover:border-white/40';
+
+                        if (reveal) {
+                            if (isCorrect) {
+                                btnClass = 'border-emerald-400 bg-emerald-500/90 text-white shadow-lg ring-4 ring-emerald-500/30 scale-[1.02]';
+                            } else {
+                                btnClass = 'border-white/5 bg-white/5 text-white/30 cursor-not-allowed opacity-50';
+                            }
+                        }
+
+                        return (
+                            <button
+                                key={option.id || idx}
+                                onClick={() => handleLiveVote(option.id)}
+                                disabled={selectedLiveOption !== null || reveal}
+                                className={`w-full p-4 sm:p-5 text-left rounded-2xl border-2 transition-all duration-300 transform active:scale-[0.98] ${btnClass}`}
+                            >
+                                <div className="flex justify-between items-center">
+                                    <span className="text-lg font-semibold block break-words">{option.text}</span>
+                                    {reveal && isCorrect && <CheckCircle2 className="text-white shrink-0" size={24} />}
+                                </div>
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
         </motion.div>
@@ -372,6 +411,40 @@ export default function ParticipantScreen() {
         );
     };
 
+    const renderLeaderboard = () => (
+        <motion.div
+            key="leaderboard"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="flex flex-col flex-1 w-full max-w-md mx-auto justify-center pb-12"
+        >
+            <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-6 md:p-8 shadow-2xl border border-white/20 text-center">
+                <h2 className="text-3xl font-black text-amber-400 mb-6 drop-shadow-sm">Bảng Xếp Hạng</h2>
+                <div className="space-y-3">
+                    {liveState.leaderboard?.map((player: any, idx: number) => (
+                        <div key={player.id} className={`flex items-center gap-4 p-4 rounded-2xl ${idx === 0 ? 'bg-amber-500/20 border border-amber-500/50' : 'bg-black/20'} transition-all`}>
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black ${idx === 0 ? 'bg-amber-500 text-white' : idx === 1 ? 'bg-slate-300 text-slate-800' : idx === 2 ? 'bg-orange-400 text-white' : 'bg-white/10 text-white/50'}`}>
+                                {idx + 1}
+                            </div>
+                            <div className="text-3xl shrink-0">{player.mascot}</div>
+                            <div className="flex-1 text-left min-w-0">
+                                <h3 className={`text-xl font-bold truncate ${idx === 0 ? 'text-amber-400' : 'text-white'}`}>{player.nickname}</h3>
+                                <p className="text-xs text-white/60">
+                                    {player.correctAnswers} đúng • {(player.totalTimeTaken / 1000).toFixed(1)}s
+                                </p>
+                            </div>
+                            <div className={`font-black shrink-0 ${idx === 0 ? 'text-amber-400 text-2xl' : 'text-white/80 text-xl'}`}>
+                                {player.correctAnswers * 1000 - Math.round(player.totalTimeTaken / 100)} <span className="text-xs">pts</span>
+                            </div>
+                        </div>
+                    ))}
+                    {!liveState.leaderboard?.length && <p className="text-white/50 font-bold">Chưa có dữ liệu</p>}
+                </div>
+            </div>
+        </motion.div>
+    );
+
     let currentView;
     if (!hasJoined) {
         currentView = renderJoinScreen();
@@ -388,6 +461,8 @@ export default function ParticipantScreen() {
             currentView = renderFinishedScreen();
         } else if (liveState.status === 'WAITING') {
             currentView = renderWaitingScreen();
+        } else if (liveState.showLeaderboard) {
+            currentView = renderLeaderboard();
         } else {
             currentView = renderLiveQuestion();
         }

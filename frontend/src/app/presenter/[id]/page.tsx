@@ -158,6 +158,14 @@ export default function PresenterLiveView() {
         setShowResetConfirm(false);
         setShowCorrectAnswer(false);
         setShowLeaderboard(false);
+
+        if (socket && session) {
+            socket.emit('host_state_update', {
+                sessionId: session.pin,
+                questionId: 'reset',
+                status: 'CREATED'
+            });
+        }
     };
 
     const broadcastQuestion = (idx: number) => {
@@ -186,7 +194,12 @@ export default function PresenterLiveView() {
 
     const loadLeaderboard = async () => {
         const res = await fetch(`${getApiUrl()}/sessions/${sessionId}/leaderboard`, { headers: headers() });
-        if (res.ok) setLeaderboard(await res.json());
+        if (res.ok) {
+            const data = await res.json();
+            setLeaderboard(data);
+            return data;
+        }
+        return [];
     };
 
     const handleNextFlow = async () => {
@@ -196,9 +209,26 @@ export default function PresenterLiveView() {
 
         if (hasCorrectAnswer && !showCorrectAnswer) {
             setShowCorrectAnswer(true);
+            if (socket && session) {
+                socket.emit('host_state_update', {
+                    sessionId: session.pin,
+                    questionId: currentQ.id,
+                    showCorrectAnswer: true,
+                    status: 'ACTIVE'
+                });
+            }
         } else if (!showLeaderboard) {
-            await loadLeaderboard();
+            const updatedLeaderboard = await loadLeaderboard();
             setShowLeaderboard(true);
+            if (socket && session) {
+                socket.emit('host_state_update', {
+                    sessionId: session.pin,
+                    questionId: currentQ.id,
+                    showLeaderboard: true,
+                    leaderboard: updatedLeaderboard,
+                    status: 'ACTIVE'
+                });
+            }
         } else {
             if (currentQIdx >= questions.length - 1) {
                 handleEnd();
