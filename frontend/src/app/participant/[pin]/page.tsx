@@ -106,7 +106,7 @@ export default function ParticipantScreen() {
                         setSelectedLiveOption(null);
                         setQStartTime(Date.now()); // reset timer for new question
                     }
-                    return { ...data, id: newId };
+                    return { ...prev, ...data, id: newId };
                 });
             }
         });
