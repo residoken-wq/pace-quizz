@@ -135,6 +135,36 @@ export class SessionsService {
     });
 
     return questions.map(q => {
+      // ─── WORD_CLOUD Logic ───
+      if (q.type === 'WORD_CLOUD') {
+        const wordCounts: Record<string, number> = {};
+        q.responses.forEach(r => {
+          const answer = r.answer as any;
+          if (answer && typeof answer.text === 'string') {
+            const wordText = answer.text.trim();
+            if (wordText) {
+              const lowerText = wordText.toLowerCase();
+              wordCounts[lowerText] = (wordCounts[lowerText] || 0) + 1;
+            }
+          }
+        });
+
+        // Convert dict to array: [{ text: "hello", value: 5 }]
+        const wordCloudData = Object.entries(wordCounts)
+          .map(([text, value]) => ({ text, value }))
+          .sort((a, b) => b.value - a.value);
+
+        return {
+          id: q.id,
+          title: q.title,
+          type: q.type,
+          order: q.order,
+          totalResponses: q.responses.length,
+          wordCloudData,
+        };
+      }
+
+      // ─── MULTIPLE_CHOICE & RATING_SCALE Logic ───
       const options = (q.options as any[]) || [];
       const voteCounts: Record<string, number> = {};
       options.forEach((opt: any) => { voteCounts[opt.id] = 0; });

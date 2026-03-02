@@ -15,6 +15,7 @@ import QRCode from 'qrcode';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PodiumLeaderboard } from '../components/PodiumLeaderboard';
 import { LiveQuestionChart } from '../components/LiveQuestionChart';
+import { WordCloudDisplay } from '../components/WordCloudDisplay';
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
 
@@ -108,7 +109,10 @@ export default function PresenterLiveView() {
         socket.on('new_vote', (data: any) => {
             setVotes(prev => {
                 const qVotes = { ...(prev[data.questionId] || {}) };
-                qVotes[data.answer.optionId] = (qVotes[data.answer.optionId] || 0) + 1;
+                const key = data.answer.optionId || (data.answer.text ? data.answer.text.trim().toLowerCase() : null);
+                if (key) {
+                    qVotes[key] = (qVotes[key] || 0) + 1;
+                }
                 return { ...prev, [data.questionId]: qVotes };
             });
         });
@@ -255,15 +259,21 @@ export default function PresenterLiveView() {
     const currentQ = questions[currentQIdx];
     const currentVotes = currentQ ? (votes[currentQ.id] || {}) : {};
 
-    const chartData = currentQ?.options?.map((opt: any, index: number) => ({
-        id: opt.id,
-        name: String.fromCharCode(65 + index), // A, B, C, D instead of full text
-        fullText: opt.text || 'Option',
-        isCorrect: opt.isCorrect,
-        votes: currentVotes[opt.id] || 0,
-    })) || [];
+    const chartData = currentQ?.type === 'WORD_CLOUD'
+        ? Object.entries(currentVotes)
+            .map(([text, votes]) => ({ text, value: votes }))
+            .sort((a, b: any) => b.value - (a as any).value)
+        : currentQ?.options?.map((opt: any, index: number) => ({
+            id: opt.id,
+            name: String.fromCharCode(65 + index), // A, B, C, D instead of full text
+            fullText: opt.text || 'Option',
+            isCorrect: opt.isCorrect,
+            votes: currentVotes[opt.id] || 0,
+        })) || [];
 
-    const totalVotes = chartData.reduce((s: number, d: any) => s + d.votes, 0);
+    const totalVotes = currentQ?.type === 'WORD_CLOUD'
+        ? chartData.reduce((s: number, d: any) => s + d.value, 0)
+        : chartData.reduce((s: number, d: any) => s + d.votes, 0);
     const hasCorrectAnswer = currentQ?.options?.some((o: any) => o.isCorrect);
 
     if (isLoading) {
@@ -401,13 +411,21 @@ export default function PresenterLiveView() {
                                         {currentQ.title}
                                     </h2>
 
-                                    <LiveQuestionChart
-                                        chartData={chartData}
-                                        showCorrectAnswer={showCorrectAnswer}
-                                        isDark={isDark}
-                                        cardBgClass={cardBgClass}
-                                        secondaryTextClass={secondaryTextClass}
-                                    />
+                                    {currentQ.type === 'WORD_CLOUD' ? (
+                                        <WordCloudDisplay
+                                            data={chartData}
+                                            isDark={isDark}
+                                            cardBgClass={cardBgClass}
+                                        />
+                                    ) : (
+                                        <LiveQuestionChart
+                                            chartData={chartData}
+                                            showCorrectAnswer={showCorrectAnswer}
+                                            isDark={isDark}
+                                            cardBgClass={cardBgClass}
+                                            secondaryTextClass={secondaryTextClass}
+                                        />
+                                    )}
                                 </motion.div>
                             )}
                         </AnimatePresence>

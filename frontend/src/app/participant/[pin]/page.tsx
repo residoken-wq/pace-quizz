@@ -47,6 +47,7 @@ export default function ParticipantScreen() {
         id: '', title: 'Đang đợi người chủ trì...', type: 'MULTIPLE_CHOICE', options: [], status: 'WAITING'
     });
     const [selectedLiveOption, setSelectedLiveOption] = useState<string | null>(null);
+    const [liveTextAnswer, setLiveTextAnswer] = useState<string>('');
 
     // Survey mode state
     const [surveyIdx, setSurveyIdx] = useState(0);
@@ -116,6 +117,7 @@ export default function ParticipantScreen() {
                     const newId = data.questionId || data.id;
                     if (prev.id !== newId) {
                         setSelectedLiveOption(null);
+                        setLiveTextAnswer('');
                         setQStartTime(Date.now()); // reset timer for new question
                         if (data.timeLimit && data.timeLimit > 0) {
                             setTimer(data.timeLimit);
@@ -156,7 +158,7 @@ export default function ParticipantScreen() {
         }
     };
 
-    const submitAnswerToBackend = async (questionId: string, optionId: string) => {
+    const submitAnswerToBackend = async (questionId: string, payload: { optionId?: string, text?: string }) => {
         if (!participantId) return;
 
         const timeTaken = Math.max(0, Date.now() - qStartTime);
@@ -168,42 +170,46 @@ export default function ParticipantScreen() {
                 body: JSON.stringify({
                     participantId,
                     questionId,
-                    answer: { optionId },
+                    answer: payload,
                     timeTaken
                 })
             });
         } catch (e) { console.error('Error recording response', e); }
     };
 
-    const handleLiveVote = async (optionId: string) => {
+    const handleLiveVote = async (optionId?: string, text?: string) => {
         if (!socket || !liveState.id) return;
-        setSelectedLiveOption(optionId);
+
+        if (optionId) setSelectedLiveOption(optionId);
+
+        const payload = optionId ? { optionId } : { text };
 
         // Broadcast over socket and save concurrently
         socket.emit('submit_vote', {
             sessionId: pin,
             questionId: liveState.id,  // fixed bug
-            answer: { optionId }
+            answer: payload
         });
 
-        await submitAnswerToBackend(liveState.id, optionId);
+        await submitAnswerToBackend(liveState.id, payload);
     };
 
-    const handleSurveyVote = async (optionId: string) => {
+    const handleSurveyVote = async (optionId?: string, text?: string) => {
         const currentQ = surveyQuestions[surveyIdx];
         if (!currentQ || surveyAnswers[currentQ.id]) return;
 
-        setSurveyAnswers(prev => ({ ...prev, [currentQ.id]: optionId }));
+        const payload = optionId ? { optionId } : { text };
+        setSurveyAnswers(prev => ({ ...prev, [currentQ.id]: optionId || text || '' }));
 
         if (socket) {
             socket.emit('submit_vote', {
                 sessionId: pin,
                 questionId: currentQ.id,
-                answer: { optionId }
+                answer: payload
             });
         }
 
-        await submitAnswerToBackend(currentQ.id, optionId);
+        await submitAnswerToBackend(currentQ.id, payload);
 
         setTimeout(() => {
             if (surveyIdx < surveyQuestions.length - 1) {
@@ -340,44 +346,70 @@ export default function ParticipantScreen() {
                 <h2 className="text-2xl sm:text-3xl font-bold text-white mb-8 leading-snug drop-shadow-sm text-center">
                     {liveState.title}
                 </h2>
-                <div className="space-y-4">
-                    {liveState.options.map((option, idx) => {
-                        const isCorrect = option.isCorrect;
-                        const reveal = liveState.showCorrectAnswer;
-                        const isSelected = selectedLiveOption === option.id;
+                {liveState.type === 'WORD_CLOUD' ? (
+                    <div className="space-y-4 flex flex-col items-center w-full">
+                        <input
+                            type="text"
+                            value={liveTextAnswer}
+                            onChange={(e) => setLiveTextAnswer(e.target.value)}
+                            disabled={selectedLiveOption !== null || liveState.showCorrectAnswer}
+                            placeholder="Nhập câu trả lời của bạn..."
+                            className="w-full text-lg p-5 rounded-2xl border-2 border-white/20 bg-white/10 text-white placeholder-white/50 focus:border-indigo-400 focus:bg-white/20 outline-none transition-all text-center font-semibold"
+                            maxLength={30}
+                        />
+                        <button
+                            onClick={() => {
+                                if (liveTextAnswer.trim()) {
+                                    setSelectedLiveOption('submitted'); // hack to freeze input
+                                    handleLiveVote(undefined, liveTextAnswer);
+                                }
+                            }}
+                            disabled={!liveTextAnswer.trim() || selectedLiveOption !== null || liveState.showCorrectAnswer}
+                            className="w-full py-4 rounded-xl font-bold text-white bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg active:scale-95"
+                        >
+                            {selectedLiveOption !== null ? 'Đã gửi' : 'Gửi đáp án'}
+                        </button>
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        {liveState.options.map((option, idx) => {
+                            const isCorrect = option.isCorrect;
+                            const reveal = liveState.showCorrectAnswer;
+                            const isSelected = selectedLiveOption === option.id;
 
-                        let btnClass = isSelected
-                            ? 'border-indigo-400 bg-indigo-500/90 text-white shadow-lg ring-4 ring-indigo-500/30'
-                            : selectedLiveOption !== null
-                                ? 'border-white/10 bg-white/5 text-white/50 cursor-not-allowed'
-                                : 'border-white/20 bg-white/10 text-white hover:bg-white/20 hover:border-white/40';
+                            let btnClass = isSelected
+                                ? 'border-indigo-400 bg-indigo-500/90 text-white shadow-lg ring-4 ring-indigo-500/30'
+                                : selectedLiveOption !== null
+                                    ? 'border-white/10 bg-white/5 text-white/50 cursor-not-allowed'
+                                    : 'border-white/20 bg-white/10 text-white hover:bg-white/20 hover:border-white/40';
 
-                        if (reveal) {
-                            if (isCorrect) {
-                                btnClass = 'border-emerald-400 bg-emerald-500/90 text-white shadow-lg ring-4 ring-emerald-500/30 scale-[1.02]';
-                                if (isSelected) btnClass += ' ring-offset-2 ring-offset-slate-900 border-dashed border-white'; // you got it right!
-                            } else {
-                                btnClass = 'border-white/5 bg-white/5 text-white/30 cursor-not-allowed opacity-50';
-                                if (isSelected) btnClass = 'border-red-500/50 bg-red-500/20 text-red-200/50 cursor-not-allowed border-dashed'; // you picked this wrong
+                            if (reveal) {
+                                if (isCorrect) {
+                                    btnClass = 'border-emerald-400 bg-emerald-500/90 text-white shadow-lg ring-4 ring-emerald-500/30 scale-[1.02]';
+                                    if (isSelected) btnClass += ' ring-offset-2 ring-offset-slate-900 border-dashed border-white'; // you got it right!
+                                } else {
+                                    btnClass = 'border-white/5 bg-white/5 text-white/30 cursor-not-allowed opacity-50';
+                                    if (isSelected) btnClass = 'border-red-500/50 bg-red-500/20 text-red-200/50 cursor-not-allowed border-dashed'; // you picked this wrong
+                                }
                             }
-                        }
 
-                        return (
-                            <button
-                                key={option.id || idx}
-                                onClick={() => handleLiveVote(option.id)}
-                                disabled={selectedLiveOption !== null || reveal}
-                                className={`w-full p-4 sm:p-5 text-left rounded-2xl border-2 transition-all duration-300 transform active:scale-[0.98] ${btnClass}`}
-                            >
-                                <div className="flex justify-between items-center relative">
-                                    <span className="text-lg font-semibold block break-words pr-8">{option.text}</span>
-                                    {reveal && isCorrect && <CheckCircle2 className="text-white shrink-0 absolute right-0" size={24} />}
-                                    {reveal && !isCorrect && isSelected && <span className="text-red-400 text-sm font-bold absolute right-0">Bạn chọn</span>}
-                                </div>
-                            </button>
-                        );
-                    })}
-                </div>
+                            return (
+                                <button
+                                    key={option.id || idx}
+                                    onClick={() => handleLiveVote(option.id)}
+                                    disabled={selectedLiveOption !== null || reveal}
+                                    className={`w-full p-4 sm:p-5 text-left rounded-2xl border-2 transition-all duration-300 transform active:scale-[0.98] ${btnClass}`}
+                                >
+                                    <div className="flex justify-between items-center relative">
+                                        <span className="text-lg font-semibold block break-words pr-8">{option.text}</span>
+                                        {reveal && isCorrect && <CheckCircle2 className="text-white shrink-0 absolute right-0" size={24} />}
+                                        {reveal && !isCorrect && isSelected && <span className="text-red-400 text-sm font-bold absolute right-0">Bạn chọn</span>}
+                                    </div>
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
             </div>
         </motion.div>
     );
