@@ -20,4 +20,4 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 
 EXPOSE 3001
-CMD npx prisma db push && npm run start:prod
+CMD npx prisma db push --accept-data-loss && npm run start:prod
