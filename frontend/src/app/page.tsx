@@ -69,12 +69,6 @@ export default function Home() {
           >
             I am a Speaker (Presenter Login)
           </button>
-          <button
-            onClick={() => router.push('/admin/users')}
-            className="text-xs text-blue-500 font-medium hover:text-blue-700 transition-colors"
-          >
-            Open Admin Portal
-          </button>
         </div>
       </motion.div>
     </div>

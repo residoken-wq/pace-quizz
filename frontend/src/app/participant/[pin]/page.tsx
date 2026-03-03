@@ -370,6 +370,42 @@ export default function ParticipantScreen() {
                             {selectedLiveOption !== null ? 'Đã gửi' : 'Gửi đáp án'}
                         </button>
                     </div>
+                ) : liveState.type === 'RATING_SCALE' ? (
+                    <div className="space-y-4 flex flex-col items-center w-full">
+                        {(() => {
+                            const cfg = (liveState.options as any) || { min: 1, max: 5, step: 1 };
+                            const values: number[] = [];
+                            for (let v = cfg.min; v <= cfg.max; v += cfg.step) values.push(v);
+                            return (
+                                <div className="flex items-center gap-3 flex-wrap justify-center">
+                                    {values.map((val) => {
+                                        const isSelected = selectedLiveOption === String(val);
+                                        return (
+                                            <button
+                                                key={val}
+                                                onClick={() => {
+                                                    setSelectedLiveOption(String(val));
+                                                    handleLiveVote(undefined, String(val));
+                                                }}
+                                                disabled={selectedLiveOption !== null}
+                                                className={`w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-black transition-all duration-300 transform active:scale-[0.9] ${isSelected
+                                                        ? 'bg-amber-500 text-white shadow-lg ring-4 ring-amber-500/30 scale-110'
+                                                        : selectedLiveOption !== null
+                                                            ? 'bg-white/5 text-white/30 cursor-not-allowed'
+                                                            : 'bg-white/10 text-white border-2 border-white/20 hover:bg-amber-500/20 hover:border-amber-400/50 hover:scale-110'
+                                                    }`}
+                                            >
+                                                {val}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            );
+                        })()}
+                        {selectedLiveOption !== null && (
+                            <p className="text-amber-400 font-bold text-sm mt-2">⭐ Bạn đã chọn: {selectedLiveOption}</p>
+                        )}
+                    </div>
                 ) : (
                     <div className="space-y-4">
                         {liveState.options.map((option, idx) => {
@@ -455,7 +491,35 @@ export default function ParticipantScreen() {
                         </h2>
 
                         <div className="space-y-4">
-                            {currentQ.options.map((option: any, idx: number) => {
+                            {currentQ.type === 'RATING_SCALE' ? (() => {
+                                const cfg = (currentQ.options as any) || { min: 1, max: 5, step: 1 };
+                                const values: number[] = [];
+                                for (let v = cfg.min; v <= cfg.max; v += cfg.step) values.push(v);
+                                const answeredVal = surveyAnswers[currentQ.id];
+                                return (
+                                    <div className="flex items-center gap-3 flex-wrap justify-center">
+                                        {values.map((val) => {
+                                            const isSelected = answeredVal === String(val);
+                                            const isDisabled = answeredVal !== undefined;
+                                            return (
+                                                <button
+                                                    key={val}
+                                                    onClick={() => handleSurveyVote(undefined, String(val))}
+                                                    disabled={isDisabled}
+                                                    className={`w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-black transition-all duration-300 transform active:scale-[0.9] ${isSelected
+                                                            ? 'bg-amber-500 text-white shadow-lg ring-4 ring-amber-500/30 scale-110'
+                                                            : isDisabled
+                                                                ? 'bg-white/5 text-white/30 cursor-not-allowed'
+                                                                : 'bg-white/10 text-white border-2 border-white/20 hover:bg-amber-500/20 hover:border-amber-400/50 hover:scale-110'
+                                                        }`}
+                                                >
+                                                    {val}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                );
+                            })() : currentQ.options.map((option: any, idx: number) => {
                                 const isSelected = answeredOptionId === option.id;
                                 const isDisabled = answeredOptionId !== undefined;
                                 return (

@@ -109,7 +109,7 @@ export default function PresenterLiveView() {
         socket.on('new_vote', (data: any) => {
             setVotes(prev => {
                 const qVotes = { ...(prev[data.questionId] || {}) };
-                const key = data.answer.optionId || (data.answer.text ? data.answer.text.trim().toLowerCase() : null);
+                const key = data.answer.optionId || (data.answer.text ? data.answer.text.trim() : null);
                 if (key) {
                     qVotes[key] = (qVotes[key] || 0) + 1;
                 }
@@ -263,13 +263,28 @@ export default function PresenterLiveView() {
         ? Object.entries(currentVotes)
             .map(([text, votes]) => ({ text, value: votes }))
             .sort((a, b: any) => b.value - (a as any).value)
-        : currentQ?.options?.map((opt: any, index: number) => ({
-            id: opt.id,
-            name: String.fromCharCode(65 + index), // A, B, C, D instead of full text
-            fullText: opt.text || 'Option',
-            isCorrect: opt.isCorrect,
-            votes: currentVotes[opt.id] || 0,
-        })) || [];
+        : currentQ?.type === 'RATING_SCALE'
+            ? (() => {
+                const cfg = currentQ.options as any || { min: 1, max: 5, step: 1 };
+                const values: any[] = [];
+                for (let v = cfg.min; v <= cfg.max; v += cfg.step) {
+                    values.push({
+                        id: String(v),
+                        name: String(v),
+                        fullText: `${v} ⭐`,
+                        isCorrect: false,
+                        votes: currentVotes[String(v)] || 0,
+                    });
+                }
+                return values;
+            })()
+            : currentQ?.options?.map((opt: any, index: number) => ({
+                id: opt.id,
+                name: String.fromCharCode(65 + index), // A, B, C, D instead of full text
+                fullText: opt.text || 'Option',
+                isCorrect: opt.isCorrect,
+                votes: currentVotes[opt.id] || 0,
+            })) || [];
 
     const totalVotes = currentQ?.type === 'WORD_CLOUD'
         ? chartData.reduce((s: number, d: any) => s + d.value, 0)
@@ -424,7 +439,7 @@ export default function PresenterLiveView() {
                                             isDark={isDark}
                                             cardBgClass={cardBgClass}
                                             secondaryTextClass={secondaryTextClass}
-                                            isPoll={currentQ.type === 'POLL'}
+                                            isPoll={currentQ.type === 'POLL' || currentQ.type === 'RATING_SCALE'}
                                             totalVotes={totalVotes}
                                         />
                                     )}

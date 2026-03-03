@@ -164,7 +164,36 @@ export class SessionsService {
         };
       }
 
-      // ─── MULTIPLE_CHOICE & RATING_SCALE Logic ───
+      // ─── RATING_SCALE Logic ───
+      if (q.type === 'RATING_SCALE') {
+        const cfg = (q.options as any) || { min: 1, max: 5, step: 1 };
+        const voteCounts: Record<string, number> = {};
+        // Initialize all valid rating values to 0
+        for (let v = cfg.min; v <= cfg.max; v += cfg.step) {
+          voteCounts[String(v)] = 0;
+        }
+        q.responses.forEach(r => {
+          const answer = r.answer as any;
+          if (answer?.text) {
+            const key = String(answer.text).trim();
+            if (voteCounts[key] !== undefined) {
+              voteCounts[key]++;
+            }
+          }
+        });
+
+        return {
+          id: q.id,
+          title: q.title,
+          type: q.type,
+          order: q.order,
+          options: q.options,
+          totalResponses: q.responses.length,
+          voteCounts,
+        };
+      }
+
+      // ─── MULTIPLE_CHOICE & POLL Logic ───
       const options = (q.options as any[]) || [];
       const voteCounts: Record<string, number> = {};
       options.forEach((opt: any) => { voteCounts[opt.id] = 0; });
