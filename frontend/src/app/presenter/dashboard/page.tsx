@@ -114,7 +114,7 @@ export default function PresenterDashboard() {
         <div className="min-h-screen bg-gray-50 flex flex-col font-sans text-gray-900">
             <header className="bg-white border-b border-gray-200 px-8 py-4 flex justify-between items-center">
                 <h1 className="text-xl font-bold text-blue-600 tracking-tight flex items-center gap-2">
-                    <BarChart3 size={24} /> Pace Quizz Workspace
+                    <BarChart3 size={24} /> PACE Quizz Workspace
                 </h1>
                 <button onClick={handleSignOut} className="text-gray-400 hover:text-red-500 transition-colors flex items-center gap-2 text-sm font-medium">
                     <LogOut size={18} /> Sign Out

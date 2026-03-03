@@ -232,7 +232,7 @@ export default function ParticipantScreen() {
             className="flex-1 flex flex-col items-center justify-center p-6 w-full max-w-md mx-auto"
         >
             <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/20 w-full text-center">
-                <h2 className="text-3xl font-black text-white mb-2">Pace Quizz</h2>
+                <h2 className="text-3xl font-black text-white mb-2">PACE Quizz</h2>
                 <p className="text-white/70 mb-8 font-medium">Chọn một ngoại hình và tên để tham gia</p>
 
                 <form onSubmit={handleJoin} className="space-y-6">
@@ -389,10 +389,10 @@ export default function ParticipantScreen() {
                                                 }}
                                                 disabled={selectedLiveOption !== null}
                                                 className={`w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-black transition-all duration-300 transform active:scale-[0.9] ${isSelected
-                                                        ? 'bg-amber-500 text-white shadow-lg ring-4 ring-amber-500/30 scale-110'
-                                                        : selectedLiveOption !== null
-                                                            ? 'bg-white/5 text-white/30 cursor-not-allowed'
-                                                            : 'bg-white/10 text-white border-2 border-white/20 hover:bg-amber-500/20 hover:border-amber-400/50 hover:scale-110'
+                                                    ? 'bg-amber-500 text-white shadow-lg ring-4 ring-amber-500/30 scale-110'
+                                                    : selectedLiveOption !== null
+                                                        ? 'bg-white/5 text-white/30 cursor-not-allowed'
+                                                        : 'bg-white/10 text-white border-2 border-white/20 hover:bg-amber-500/20 hover:border-amber-400/50 hover:scale-110'
                                                     }`}
                                             >
                                                 {val}
@@ -507,10 +507,10 @@ export default function ParticipantScreen() {
                                                     onClick={() => handleSurveyVote(undefined, String(val))}
                                                     disabled={isDisabled}
                                                     className={`w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-black transition-all duration-300 transform active:scale-[0.9] ${isSelected
-                                                            ? 'bg-amber-500 text-white shadow-lg ring-4 ring-amber-500/30 scale-110'
-                                                            : isDisabled
-                                                                ? 'bg-white/5 text-white/30 cursor-not-allowed'
-                                                                : 'bg-white/10 text-white border-2 border-white/20 hover:bg-amber-500/20 hover:border-amber-400/50 hover:scale-110'
+                                                        ? 'bg-amber-500 text-white shadow-lg ring-4 ring-amber-500/30 scale-110'
+                                                        : isDisabled
+                                                            ? 'bg-white/5 text-white/30 cursor-not-allowed'
+                                                            : 'bg-white/10 text-white border-2 border-white/20 hover:bg-amber-500/20 hover:border-amber-400/50 hover:scale-110'
                                                         }`}
                                                 >
                                                     {val}

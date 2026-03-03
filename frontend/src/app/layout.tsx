@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Pace Quizz B2B Platform",
+  title: "PACE Quizz Platform",
   description: "Enterprise high-performance realtime polling",
 };
 
