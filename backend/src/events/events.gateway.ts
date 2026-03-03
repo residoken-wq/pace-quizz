@@ -11,7 +11,11 @@ import { Server, Socket } from 'socket.io';
 
 @WebSocketGateway({
   cors: {
-    origin: true,
+    origin: [
+      'https://quizz.pace.edu.vn',
+      'http://localhost:3000',
+      'http://localhost:3001',
+    ],
     credentials: true,
   },
 })

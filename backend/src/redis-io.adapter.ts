@@ -28,7 +28,11 @@ export class RedisIoAdapter extends IoAdapter {
         const server = super.createIOServer(port, {
             ...options,
             cors: {
-                origin: true,
+                origin: [
+                    'https://quizz.pace.edu.vn',
+                    'http://localhost:3000',
+                    'http://localhost:3001',
+                ],
                 methods: ['GET', 'POST'],
                 credentials: true,
             },
