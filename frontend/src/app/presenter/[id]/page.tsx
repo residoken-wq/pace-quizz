@@ -212,7 +212,7 @@ export default function PresenterLiveView() {
     const handleNextFlow = async () => {
         const questions = session?.questions || [];
         const currentQ = questions[currentQIdx];
-        const hasCorrectAnswer = currentQ?.options?.some((o: any) => o.isCorrect);
+        const hasCorrectAnswer = Array.isArray(currentQ?.options) && currentQ?.options?.some((o: any) => o.isCorrect);
 
         if (hasCorrectAnswer && !showCorrectAnswer) {
             setShowCorrectAnswer(true);
@@ -289,7 +289,7 @@ export default function PresenterLiveView() {
     const totalVotes = currentQ?.type === 'WORD_CLOUD'
         ? chartData.reduce((s: number, d: any) => s + d.value, 0)
         : chartData.reduce((s: number, d: any) => s + d.votes, 0);
-    const hasCorrectAnswer = currentQ?.options?.some((o: any) => o.isCorrect);
+    const hasCorrectAnswer = Array.isArray(currentQ?.options) && currentQ?.options?.some((o: any) => o.isCorrect);
 
     if (isLoading) {
         return (
