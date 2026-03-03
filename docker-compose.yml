@@ -43,7 +43,7 @@ services:
     #   - "3001:3001" # NPM Proxy: http://pace_quizz_backend:3001
     environment:
       - PORT=3001
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-pace_quizz}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-pace_quizz}?connection_limit=20&pool_timeout=10
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     depends_on:

@@ -12,23 +12,16 @@ export class ResponsesService {
             throw new BadRequestException('Missing required fields for response');
         }
 
-        // Upsert the response so a participant cannot vote twice for the same question
-        const existingResponse = await this.prisma.response.findFirst({
-            where: { participantId, questionId }
-        });
-
-        if (existingResponse) {
-            return this.prisma.response.update({
-                where: { id: existingResponse.id },
-                data: {
-                    answer,
-                    timeTaken: timeTaken || 0
-                }
-            });
-        }
-
-        return this.prisma.response.create({
-            data: {
+        // Single atomic upsert — uses the @@unique([participantId, questionId]) index
+        return this.prisma.response.upsert({
+            where: {
+                participantId_questionId: { participantId, questionId }
+            },
+            update: {
+                answer,
+                timeTaken: timeTaken || 0,
+            },
+            create: {
                 participantId,
                 questionId,
                 answer,

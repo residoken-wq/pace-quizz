@@ -100,6 +100,26 @@ export default function PresenterLiveView() {
             .then(setQrDataUrl);
     }, [session]);
 
+    // ─── Vote batching buffer (avoids 500 re-renders per question) ───
+    const voteBatchRef = useRef<{ questionId: string; key: string }[]>([]);
+    const flushTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+    const flushVoteBatch = useCallback(() => {
+        const batch = voteBatchRef.current;
+        if (batch.length === 0) return;
+        voteBatchRef.current = [];
+
+        setVotes(prev => {
+            const next = { ...prev };
+            for (const { questionId, key } of batch) {
+                const qVotes = { ...(next[questionId] || {}) };
+                qVotes[key] = (qVotes[key] || 0) + 1;
+                next[questionId] = qVotes;
+            }
+            return next;
+        });
+    }, []);
+
     // ─── Socket listeners ───
     useEffect(() => {
         if (!socket || !isConnected || !session) return;
@@ -107,18 +127,22 @@ export default function PresenterLiveView() {
 
         socket.on('participant_joined', () => setParticipantsCount(prev => prev + 1));
         socket.on('new_vote', (data: any) => {
-            setVotes(prev => {
-                const qVotes = { ...(prev[data.questionId] || {}) };
-                const key = data.answer.optionId || (data.answer.text ? data.answer.text.trim() : null);
-                if (key) {
-                    qVotes[key] = (qVotes[key] || 0) + 1;
-                }
-                return { ...prev, [data.questionId]: qVotes };
-            });
+            const key = data.answer.optionId || (data.answer.text ? data.answer.text.trim() : null);
+            if (key) {
+                voteBatchRef.current.push({ questionId: data.questionId, key });
+            }
         });
 
-        return () => { socket.off('participant_joined'); socket.off('new_vote'); };
-    }, [socket, isConnected, session]);
+        // Flush batched votes every 200ms — max ~5 re-renders/second
+        flushTimerRef.current = setInterval(flushVoteBatch, 200);
+
+        return () => {
+            socket.off('participant_joined');
+            socket.off('new_vote');
+            if (flushTimerRef.current) clearInterval(flushTimerRef.current);
+            flushVoteBatch(); // flush remaining
+        };
+    }, [socket, isConnected, session, flushVoteBatch]);
 
     // ─── Timer ───
     useEffect(() => {

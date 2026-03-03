@@ -35,9 +35,16 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const roomName = `session_${data.sessionId}`;
     await client.join(roomName);
 
+    // Host joins a dedicated room for receiving vote data (avoids broadcasting to all participants)
+    if (data.role === 'host') {
+      const hostRoom = `host_${data.sessionId}`;
+      await client.join(hostRoom);
+    }
+
     // Notify host that a participant joined
     if (data.role === 'participant') {
-      this.server.to(roomName).emit('participant_joined', {
+      const hostRoom = `host_${data.sessionId}`;
+      this.server.to(hostRoom).emit('participant_joined', {
         clientId: client.id,
       });
     }
@@ -61,15 +68,14 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() data: { sessionId: string; questionId: string; answer: any },
     @ConnectedSocket() client: Socket,
   ) {
-    // Broadcast vote to the host in real-time
-    const roomName = `session_${data.sessionId}`;
-    this.server.to(roomName).emit('new_vote', {
+    // Only send vote data to the host — NOT to all 500 participants
+    const hostRoom = `host_${data.sessionId}`;
+    this.server.to(hostRoom).emit('new_vote', {
       clientId: client.id,
       questionId: data.questionId,
       answer: data.answer,
     });
 
-    // In a real app, you would also save to the database here or via an API endpoint.
     return { status: 'vote_recorded' };
   }
 }

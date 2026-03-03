@@ -105,6 +105,8 @@ model Response {
   score         Int? // For behavioral scoring
   timeTaken     Int? // Time taken to answer in milliseconds
   createdAt     DateTime    @default(now())
+
+  @@unique([participantId, questionId])
 }
 
 model ActivityLog {
