@@ -31,11 +31,24 @@ export default function AdminLogin() {
             }
 
             const data = await res.json();
+            console.log('Login Response Data:', data);
+
             localStorage.setItem('access_token', data.access_token);
+            console.log('Token set. Redirecting to /admin/users...');
+
             router.push('/admin/users');
+            // Fallback in case Next.js router stalls
+            setTimeout(() => {
+                if (window.location.pathname !== '/admin/users') {
+                    console.log('Router.push fallback triggered');
+                    window.location.href = '/admin/users';
+                }
+            }, 500);
         } catch (err: any) {
+            console.error('Login Error Caught:', err);
             setError(err.message || 'Login failed. Please verify your credentials.');
         } finally {
+            console.log('Login request finished.');
             setIsLoading(false);
         }
     };
