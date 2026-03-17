@@ -1,0 +1,186 @@
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SessionsController = void 0;
+const common_1 = require("@nestjs/common");
+const sessions_service_1 = require("./sessions.service");
+const create_session_dto_1 = require("./dto/create-session.dto");
+const update_session_dto_1 = require("./dto/update-session.dto");
+const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
+let SessionsController = class SessionsController {
+    sessionsService;
+    constructor(sessionsService) {
+        this.sessionsService = sessionsService;
+    }
+    create(createSessionDto, req) {
+        createSessionDto.hostId = req.user.userId;
+        return this.sessionsService.create(createSessionDto);
+    }
+    findMySessions(req) {
+        return this.sessionsService.findByHost(req.user.userId);
+    }
+    findAll() {
+        return this.sessionsService.findAll();
+    }
+    findByPin(pin) {
+        return this.sessionsService.findByPin(pin);
+    }
+    joinSession(pin, body) {
+        return this.sessionsService.joinSession(pin, body.nickname, body.mascot);
+    }
+    getLeaderboard(id) {
+        return this.sessionsService.getLeaderboard(id);
+    }
+    findOne(id) {
+        return this.sessionsService.findOne(id);
+    }
+    update(id, updateSessionDto) {
+        return this.sessionsService.update(id, updateSessionDto);
+    }
+    remove(id) {
+        return this.sessionsService.remove(id);
+    }
+    startSession(id) {
+        return this.sessionsService.startSession(id);
+    }
+    endSession(id) {
+        return this.sessionsService.endSession(id);
+    }
+    resetResults(id) {
+        return this.sessionsService.resetResults(id);
+    }
+    getActivityLogs(id) {
+        return this.sessionsService.getActivityLogs(id);
+    }
+    getResults(id) {
+        return this.sessionsService.getResults(id);
+    }
+};
+exports.SessionsController = SessionsController;
+__decorate([
+    (0, common_1.Post)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [create_session_dto_1.CreateSessionDto, Object]),
+    __metadata("design:returntype", void 0)
+], SessionsController.prototype, "create", null);
+__decorate([
+    (0, common_1.Get)('my'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], SessionsController.prototype, "findMySessions", null);
+__decorate([
+    (0, common_1.Get)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], SessionsController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)('pin/:pin'),
+    __param(0, (0, common_1.Param)('pin')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], SessionsController.prototype, "findByPin", null);
+__decorate([
+    (0, common_1.Post)('pin/:pin/join'),
+    __param(0, (0, common_1.Param)('pin')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], SessionsController.prototype, "joinSession", null);
+__decorate([
+    (0, common_1.Get)(':id/leaderboard'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], SessionsController.prototype, "getLeaderboard", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], SessionsController.prototype, "findOne", null);
+__decorate([
+    (0, common_1.Patch)(':id'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, update_session_dto_1.UpdateSessionDto]),
+    __metadata("design:returntype", void 0)
+], SessionsController.prototype, "update", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], SessionsController.prototype, "remove", null);
+__decorate([
+    (0, common_1.Post)(':id/start'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], SessionsController.prototype, "startSession", null);
+__decorate([
+    (0, common_1.Post)(':id/end'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], SessionsController.prototype, "endSession", null);
+__decorate([
+    (0, common_1.Post)(':id/reset'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], SessionsController.prototype, "resetResults", null);
+__decorate([
+    (0, common_1.Get)(':id/logs'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], SessionsController.prototype, "getActivityLogs", null);
+__decorate([
+    (0, common_1.Get)(':id/results'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], SessionsController.prototype, "getResults", null);
+exports.SessionsController = SessionsController = __decorate([
+    (0, common_1.Controller)('sessions'),
+    __metadata("design:paramtypes", [sessions_service_1.SessionsService])
+], SessionsController);
+//# sourceMappingURL=sessions.controller.js.map
