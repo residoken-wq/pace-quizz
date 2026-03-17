@@ -1,10 +1,10 @@
 FROM node:20-alpine AS builder
-
-RUN apk add --no-cache openssl
-
+RUN apk add --no-cache openssl libc6-compat
 WORKDIR /app
-COPY package*.json ./
-RUN npm install
+
+COPY package.json package-lock.json* ./
+RUN npm ci
+
 COPY . .
 RUN npx prisma generate
 RUN npm run build

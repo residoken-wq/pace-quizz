@@ -1,8 +1,13 @@
 FROM node:20-alpine AS builder
-
+# Enable Corepack and cache dependencies
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
-COPY package*.json ./
-RUN npm install
+
+# Install dependencies based on the preferred package manager
+COPY package.json package-lock.json* ./
+RUN npm ci
+
+# Copy source files
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ARG NEXT_PUBLIC_API_URL
