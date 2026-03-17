@@ -35,4 +35,6 @@
 - **Testing:** When asked to verify, write load testing scripts (e.g., using K6 or Artillery) to simulate hundreds of concurrent WebSocket connections.
 - **Artifact Creation:** For complex logic (like the WebSockets event flow or Database Schema), generate an Artifact/Markdown document first for review before writing code.
 
-"Feature Requirement: The system must support two session types: 'Live Synchronous' (with strict server-side timers, e.g., 20s per question) and 'Self-paced Asynchronous' surveys. Questions must support categorization tags (e.g., Awareness, Mindset) so the backend can aggregate results and the frontend can render percentage-based analytical charts (Radar/Bar charts) mapping users' behavioral scores."
+- "Feature Requirement: The system must support two session types: 'Live Synchronous' (with strict server-side timers, e.g., 20s per question) and 'Self-paced Asynchronous' surveys. Questions must support categorization tags (e.g., Awareness, Mindset) so the backend can aggregate results and the frontend can render percentage-based analytical charts (Radar/Bar charts) mapping users' behavioral scores."
+
+- cấu hình nginx lỗi CORS header: docker exec nexus-proxy sed -i '/# Proxy!/i \    proxy_hide_header Access-Control-Allow-Origin;\n    proxy_hide_header Access-Control-Allow-Methods;\n    proxy_hide_header Access-Control-Allow-Headers;\n    proxy_hide_header Access-Control-Allow-Credentials;' /data/nginx/proxy_host/14.conf --> (đổi 14 = id)
