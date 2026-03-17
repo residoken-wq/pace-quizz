@@ -87,6 +87,7 @@ enum QuestionType {
   WORD_CLOUD
   RATING_SCALE
   POLL
+  SLIDE
 }
 
 model Tag {

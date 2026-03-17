@@ -4,9 +4,9 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useSocket } from '@/context/SocketProvider';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, CheckCircle2 } from 'lucide-react';
+import { Loader2, CheckCircle2, Presentation } from 'lucide-react';
 
-type QuestionType = 'MULTIPLE_CHOICE' | 'WORD_CLOUD' | 'RATING_SCALE' | 'POLL';
+type QuestionType = 'MULTIPLE_CHOICE' | 'WORD_CLOUD' | 'RATING_SCALE' | 'POLL' | 'SLIDE';
 
 interface QuestionState {
     id: string;
@@ -346,7 +346,19 @@ export default function ParticipantScreen() {
                 <h2 className="text-2xl sm:text-3xl font-bold text-white mb-8 leading-snug drop-shadow-sm text-center">
                     {liveState.title}
                 </h2>
-                {liveState.type === 'WORD_CLOUD' ? (
+                {liveState.type === 'SLIDE' ? (
+                    <div className="flex flex-col items-center gap-4 py-8">
+                        <div className="w-20 h-20 bg-violet-500/20 rounded-2xl flex items-center justify-center">
+                            <Presentation size={36} className="text-violet-400" />
+                        </div>
+                        <p className="text-white/70 text-lg font-semibold text-center">
+                            Đang trình chiếu slide...
+                        </p>
+                        <p className="text-white/40 text-sm text-center">
+                            Hãy theo dõi trên màn hình chính
+                        </p>
+                    </div>
+                ) : liveState.type === 'WORD_CLOUD' ? (
                     <div className="space-y-4 flex flex-col items-center w-full">
                         <input
                             type="text"

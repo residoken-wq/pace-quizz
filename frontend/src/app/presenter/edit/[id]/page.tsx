@@ -4,12 +4,13 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import {
     ArrowLeft, Plus, Save, Trash2, GripVertical, CheckCircle2, Clock,
-    MessageSquare, BarChart2, Cloud, Star, AlertCircle, Loader2, Sparkles, Hash
+    MessageSquare, BarChart2, Cloud, Star, AlertCircle, Loader2, Sparkles, Hash, Presentation
 } from 'lucide-react';
 import { MultipleChoiceEditor } from '../components/MultipleChoiceEditor';
 import { RatingScaleEditor } from '../components/RatingScaleEditor';
+import { SlideCanvasEditor } from '../components/SlideCanvasEditor';
 
-type QuestionType = 'MULTIPLE_CHOICE' | 'WORD_CLOUD' | 'RATING_SCALE' | 'POLL';
+type QuestionType = 'MULTIPLE_CHOICE' | 'WORD_CLOUD' | 'RATING_SCALE' | 'POLL' | 'SLIDE';
 
 type Option = {
     id: string;
@@ -80,6 +81,13 @@ const QUESTION_TYPE_CONFIG: Record<QuestionType, {
         bg: 'bg-rose-50', bgSolid: 'bg-rose-600',
         gradient: 'from-rose-500 to-pink-600',
         border: 'border-rose-200',
+    },
+    SLIDE: {
+        label: 'Slide Trình Chiếu', icon: Presentation, emoji: '🖼️',
+        color: 'text-violet-600', textDark: 'text-violet-800',
+        bg: 'bg-violet-50', bgSolid: 'bg-violet-600',
+        gradient: 'from-violet-500 to-purple-600',
+        border: 'border-violet-200',
     }
 };
 
@@ -144,8 +152,10 @@ export default function SessionEditor() {
                 ]
                 : type === 'RATING_SCALE'
                     ? { min: 1, max: 5, step: 1 }
-                    : [],
-            timeLimit: 30,
+                    : type === 'SLIDE'
+                        ? { canvasJSON: null, background: { type: 'color', value: '#1a1a2e' } }
+                        : [],
+            timeLimit: type === 'SLIDE' ? 0 : 30,
             _isNew: true,
             _isDirty: true,
         };
@@ -497,8 +507,10 @@ export default function SessionEditor() {
                                                         ]
                                                         : type === 'RATING_SCALE'
                                                             ? { min: 1, max: 5, step: 1 }
-                                                            : [];
-                                                    updateQuestion(selectedIdx, { type, options: newOptions });
+                                                            : type === 'SLIDE'
+                                                                ? { canvasJSON: null, background: { type: 'color', value: '#1a1a2e' } }
+                                                                : [];
+                                                    updateQuestion(selectedIdx, { type, options: newOptions, timeLimit: type === 'SLIDE' ? 0 : (selectedQuestion.timeLimit || 30) });
                                                 }}
                                                 className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 font-bold text-sm transition-all ${isActive
                                                     ? `${config.border} ${config.bg} shadow-md ring-2 ring-offset-1 ring-${config.border.replace('border-', '')}`
@@ -551,7 +563,18 @@ export default function SessionEditor() {
                                 </div>
                             )}
 
-                            {/* Time Limit */}
+                            {selectedQuestion.type === 'SLIDE' && (
+                                <SlideCanvasEditor
+                                    value={selectedQuestion.options || null}
+                                    onChange={(data) => updateQuestion(selectedIdx, { options: data })}
+                                    apiUrl={getApiUrl()}
+                                    token={getToken() || ''}
+                                />
+                            )}
+
+                            {/* Time Limit (hidden for SLIDE) */}
+                            {selectedQuestion.type !== 'SLIDE' && (
+                            <>
                             <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow">
                                 <div className="flex items-center gap-2.5 mb-3">
                                     <span className="text-lg">⏱️</span>
@@ -594,6 +617,8 @@ export default function SessionEditor() {
                                     </button>
                                 </div>
                             </div>
+                            </>
+                            )}
                         </div>
                     )}
                 </main>

@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { PodiumLeaderboard } from '../components/PodiumLeaderboard';
 import { LiveQuestionChart } from '../components/LiveQuestionChart';
 import { WordCloudDisplay } from '../components/WordCloudDisplay';
+import { SlideDisplay } from '../components/SlideDisplay';
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
 
@@ -236,6 +237,17 @@ export default function PresenterLiveView() {
     const handleNextFlow = async () => {
         const questions = session?.questions || [];
         const currentQ = questions[currentQIdx];
+
+        // SLIDE type: skip correct answer and leaderboard, go directly to next
+        if (currentQ?.type === 'SLIDE') {
+            if (currentQIdx >= questions.length - 1) {
+                handleEnd();
+            } else {
+                goToQuestion(currentQIdx + 1);
+            }
+            return;
+        }
+
         const hasCorrectAnswer = Array.isArray(currentQ?.options) && currentQ?.options?.some((o: any) => o.isCorrect);
 
         if (hasCorrectAnswer && !showCorrectAnswer) {
@@ -450,7 +462,13 @@ export default function PresenterLiveView() {
                                         {currentQ.title}
                                     </h2>
 
-                                    {currentQ.type === 'WORD_CLOUD' ? (
+                                    {currentQ.type === 'SLIDE' ? (
+                                        <SlideDisplay
+                                            data={currentQ.options as any}
+                                            isDark={isDark}
+                                            apiUrl={getApiUrl()}
+                                        />
+                                    ) : currentQ.type === 'WORD_CLOUD' ? (
                                         <WordCloudDisplay
                                             data={chartData}
                                             isDark={isDark}
@@ -482,7 +500,13 @@ export default function PresenterLiveView() {
                                 onClick={handleNextFlow}
                                 className="flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg active:scale-[0.97]"
                             >
-                                {(!showCorrectAnswer && hasCorrectAnswer) ? (
+                                {currentQ?.type === 'SLIDE' ? (
+                                    currentQIdx >= questions.length - 1 ? (
+                                        <><Square size={18} /> Kết thúc</>
+                                    ) : (
+                                        <>Tiếp theo <ChevronRight size={18} /></>
+                                    )
+                                ) : (!showCorrectAnswer && hasCorrectAnswer) ? (
                                     <><Eye size={18} /> Xem Đáp Án</>
                                 ) : !showLeaderboard ? (
                                     <><Trophy size={18} /> Bảng Xếp Hạng</>
