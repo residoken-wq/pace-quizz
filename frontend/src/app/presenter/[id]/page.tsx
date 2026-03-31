@@ -357,13 +357,17 @@ export default function PresenterLiveView() {
                 }
                 return values;
             })()
-            : currentQ?.options?.map((opt: any, index: number) => ({
-                id: opt.id,
-                name: String.fromCharCode(65 + index), // A, B, C, D instead of full text
-                fullText: opt.text || 'Option',
-                isCorrect: opt.isCorrect,
-                votes: currentVotes[opt.id] || 0,
-            })) || [];
+            : currentQ?.type === 'SLIDE'
+                ? [] // SLIDE type has no chart data — options is canvas JSON, not an array
+                : Array.isArray(currentQ?.options)
+                    ? currentQ.options.map((opt: any, index: number) => ({
+                        id: opt.id,
+                        name: String.fromCharCode(65 + index),
+                        fullText: opt.text || 'Option',
+                        isCorrect: opt.isCorrect,
+                        votes: currentVotes[opt.id] || 0,
+                    }))
+                    : [];
 
     const totalVotes = currentQ?.type === 'WORD_CLOUD'
         ? chartData.reduce((s: number, d: any) => s + d.value, 0)
