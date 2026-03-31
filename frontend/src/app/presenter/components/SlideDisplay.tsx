@@ -131,13 +131,18 @@ export function SlideDisplay({ data, isDark, apiUrl }: SlideDisplayProps) {
             const fabricModule = await import('fabric');
             if (!mounted || !canvasRef.current) return;
 
+            const cw = containerRef.current?.clientWidth || CANVAS_WIDTH;
+            const zoom = cw / CANVAS_WIDTH;
+            
             const canvas = new fabricModule.StaticCanvas(canvasRef.current, {
-                width: CANVAS_WIDTH,
-                height: CANVAS_HEIGHT,
+                width: cw,
+                height: CANVAS_HEIGHT * zoom,
             });
+            canvas.setZoom(zoom);
 
             try {
                 await canvas.loadFromJSON(data.canvasJSON);
+                
                 // Hide YouTube & Video placeholder groups so overlays show cleanly
                 canvas.getObjects().forEach((obj: any) => {
                     if (obj.isYoutubePlaceholder || obj.youtubeVideoId || obj.isVideoPlaceholder || obj.videoUrl) {

@@ -474,23 +474,13 @@ export function SlideCanvasEditor({ value, onChange, apiUrl }: SlideCanvasEditor
         const group = new fabric.Group([bg, playCircle, playTriangle, label], {
             left: CANVAS_WIDTH / 2 - W / 2,
             top: CANVAS_HEIGHT / 2 - H / 2,
-            // Lock rotation so iframe overlay always aligns
             lockRotation: true,
-            // Custom properties
-            isYoutubePlaceholder: true,
-            youtubeVideoId: videoId,
         });
 
         // Ensure custom props survive toObject/toJSON
-        (group as any).toObject = (function (toObject) {
-            return function (this: any, ...args: any[]) {
-                return {
-                    ...toObject.apply(this, args),
-                    isYoutubePlaceholder: this.isYoutubePlaceholder,
-                    youtubeVideoId: this.youtubeVideoId,
-                };
-            };
-        })((group as any).toObject);
+        (group as any).isYoutubePlaceholder = true;
+        (group as any).youtubeVideoId = videoId;
+        (group as any).name = 'youtubePlaceholder';
 
         canvas.add(group);
         canvas.setActiveObject(group);
@@ -561,19 +551,11 @@ export function SlideCanvasEditor({ value, onChange, apiUrl }: SlideCanvasEditor
                 left: CANVAS_WIDTH / 2 - W / 2,
                 top: CANVAS_HEIGHT / 2 - H / 2,
                 lockRotation: true,
-                isVideoPlaceholder: true,
-                videoUrl: videoFileUrl,
             });
 
-            (group as any).toObject = (function (toObject) {
-                return function (this: any, ...args: any[]) {
-                    return {
-                        ...toObject.apply(this, args),
-                        isVideoPlaceholder: this.isVideoPlaceholder,
-                        videoUrl: this.videoUrl,
-                    };
-                };
-            })((group as any).toObject);
+            (group as any).isVideoPlaceholder = true;
+            (group as any).videoUrl = videoFileUrl;
+            (group as any).name = 'videoPlaceholder';
 
             canvas.add(group);
             canvas.setActiveObject(group);
