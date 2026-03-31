@@ -477,10 +477,14 @@ export function SlideCanvasEditor({ value, onChange, apiUrl }: SlideCanvasEditor
             lockRotation: true,
         });
 
-        // Ensure custom props survive toObject/toJSON
-        (group as any).isYoutubePlaceholder = true;
-        (group as any).youtubeVideoId = videoId;
-        (group as any).name = 'youtubePlaceholder';
+        // Ensure custom props survive toObject/toJSON via explicit override
+        const originalToObject = group.toObject.bind(group);
+        (group as any).toObject = function(propertiesToInclude: any[]) {
+            const obj = originalToObject(propertiesToInclude);
+            obj.isYoutubePlaceholder = true;
+            obj.youtubeVideoId = videoId;
+            return obj;
+        };
 
         canvas.add(group);
         canvas.setActiveObject(group);
@@ -553,9 +557,14 @@ export function SlideCanvasEditor({ value, onChange, apiUrl }: SlideCanvasEditor
                 lockRotation: true,
             });
 
-            (group as any).isVideoPlaceholder = true;
-            (group as any).videoUrl = videoFileUrl;
-            (group as any).name = 'videoPlaceholder';
+            // Forecefully export custom properties for the presenter view overlays
+            const originalToObject = group.toObject.bind(group);
+            (group as any).toObject = function(propertiesToInclude: any[]) {
+                const obj = originalToObject(propertiesToInclude);
+                obj.isVideoPlaceholder = true;
+                obj.videoUrl = videoFileUrl;
+                return obj;
+            };
 
             canvas.add(group);
             canvas.setActiveObject(group);
