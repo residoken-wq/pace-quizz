@@ -9,7 +9,7 @@ import {
 import {
     Users, Play, Square, ChevronRight, ChevronLeft, QrCode, RotateCcw,
     Wifi, WifiOff, Clock, CheckCircle2, History, ArrowLeft, Loader2,
-    AlertTriangle, Sun, Moon, Trophy, Eye
+    AlertTriangle, Sun, Moon, Trophy, Eye, Repeat, Timer
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -74,6 +74,11 @@ export default function PresenterLiveView() {
     // Theme state
     const [theme, setTheme] = useState<'dark' | 'light'>('dark');
     const isDark = theme === 'dark';
+
+    // Loop Present state
+    const [loopEnabled, setLoopEnabled] = useState(false);
+    const [loopInterval, setLoopInterval] = useState(10); // seconds per slide
+    const loopTimerRef = useRef<NodeJS.Timeout | null>(null);
 
     // ─── Fetch session data ───
     useEffect(() => {
@@ -241,7 +246,11 @@ export default function PresenterLiveView() {
         // SLIDE type: skip correct answer and leaderboard, go directly to next
         if (currentQ?.type === 'SLIDE') {
             if (currentQIdx >= questions.length - 1) {
-                handleEnd();
+                if (loopEnabled) {
+                    goToQuestion(0); // Loop back to first
+                } else {
+                    handleEnd();
+                }
             } else {
                 goToQuestion(currentQIdx + 1);
             }
@@ -274,7 +283,11 @@ export default function PresenterLiveView() {
             }
         } else {
             if (currentQIdx >= questions.length - 1) {
-                handleEnd();
+                if (loopEnabled) {
+                    goToQuestion(0); // Loop back to first
+                } else {
+                    handleEnd();
+                }
             } else {
                 goToQuestion(currentQIdx + 1);
             }
@@ -290,6 +303,36 @@ export default function PresenterLiveView() {
     const toggleTheme = () => {
         setTheme(prev => prev === 'dark' ? 'light' : 'dark');
     };
+
+    // ─── Loop auto-advance effect ───
+    useEffect(() => {
+        if (loopTimerRef.current) {
+            clearInterval(loopTimerRef.current);
+            loopTimerRef.current = null;
+        }
+
+        if (loopEnabled && phase === 'LIVE') {
+            loopTimerRef.current = setInterval(() => {
+                // Auto-advance to next question/slide
+                const questions = session?.questions || [];
+                setCurrentQIdx(prev => {
+                    const nextIdx = prev >= questions.length - 1 ? 0 : prev + 1;
+                    // Need to broadcast the new question
+                    setTimeout(() => broadcastQuestion(nextIdx), 0);
+                    return nextIdx;
+                });
+                setShowCorrectAnswer(false);
+                setShowLeaderboard(false);
+            }, loopInterval * 1000);
+        }
+
+        return () => {
+            if (loopTimerRef.current) {
+                clearInterval(loopTimerRef.current);
+                loopTimerRef.current = null;
+            }
+        };
+    }, [loopEnabled, loopInterval, phase, session?.questions?.length]);
 
     const questions = session?.questions || [];
     const currentQ = questions[currentQIdx];
@@ -496,13 +539,39 @@ export default function PresenterLiveView() {
                             Slide {currentQIdx + 1} / {questions.length}
                         </span>
                         <div className="flex items-center gap-3">
+                            {/* Loop toggle */}
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => setLoopEnabled(!loopEnabled)}
+                                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold transition-all ${loopEnabled
+                                        ? 'bg-emerald-500/20 text-emerald-500 border border-emerald-500/30'
+                                        : isDark ? 'bg-white/5 text-white/40 border border-white/10 hover:bg-white/10' : 'bg-slate-100 text-slate-400 border border-slate-200 hover:bg-slate-200'
+                                    }`}
+                                    title={loopEnabled ? 'Tắt lặp' : 'Bật lặp tự động'}
+                                >
+                                    <Repeat size={16} />
+                                    {loopEnabled ? 'Đang lặp' : 'Lặp'}
+                                </button>
+                                {loopEnabled && (
+                                    <select
+                                        value={loopInterval}
+                                        onChange={(e) => setLoopInterval(parseInt(e.target.value))}
+                                        className={`text-sm font-bold rounded-lg px-2 py-2 border outline-none cursor-pointer ${isDark ? 'bg-white/10 text-white/70 border-white/10' : 'bg-slate-100 text-slate-700 border-slate-200'}`}
+                                    >
+                                        {[5, 10, 15, 20, 30, 45, 60].map(s => (
+                                            <option key={s} value={s}>{s}s</option>
+                                        ))}
+                                    </select>
+                                )}
+                            </div>
+
                             <button
                                 onClick={handleNextFlow}
                                 className="flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg active:scale-[0.97]"
                             >
                                 {currentQ?.type === 'SLIDE' ? (
                                     currentQIdx >= questions.length - 1 ? (
-                                        <><Square size={18} /> Kết thúc</>
+                                        loopEnabled ? <><Repeat size={18} /> Quay lại đầu</> : <><Square size={18} /> Kết thúc</>
                                     ) : (
                                         <>Tiếp theo <ChevronRight size={18} /></>
                                     )
@@ -511,7 +580,7 @@ export default function PresenterLiveView() {
                                 ) : !showLeaderboard ? (
                                     <><Trophy size={18} /> Bảng Xếp Hạng</>
                                 ) : currentQIdx >= questions.length - 1 ? (
-                                    <><Square size={18} /> Kết thúc</>
+                                    loopEnabled ? <><Repeat size={18} /> Quay lại đầu</> : <><Square size={18} /> Kết thúc</>
                                 ) : (
                                     <>Câu tiếp <ChevronRight size={18} /></>
                                 )}

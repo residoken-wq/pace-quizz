@@ -31,6 +31,14 @@ type YoutubeOverlay = {
     height: number;
 };
 
+type VideoOverlay = {
+    url: string;
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+};
+
 const CANVAS_WIDTH = 1920;
 const CANVAS_HEIGHT = 1080;
 
@@ -41,13 +49,36 @@ function findYoutubeObjects(canvasJSON: any): YoutubeOverlay[] {
 
     for (const obj of canvasJSON.objects) {
         if (obj.isYoutubePlaceholder && obj.youtubeVideoId) {
-            // For groups, Fabric stores left/top/width/height and scaleX/scaleY
             const scaleX = obj.scaleX || 1;
             const scaleY = obj.scaleY || 1;
             const w = (obj.width || 640) * scaleX;
             const h = (obj.height || 360) * scaleY;
             results.push({
                 videoId: obj.youtubeVideoId,
+                left: obj.left || 0,
+                top: obj.top || 0,
+                width: w,
+                height: h,
+            });
+        }
+    }
+
+    return results;
+}
+
+// Search canvas JSON for uploaded video placeholders
+function findVideoObjects(canvasJSON: any): VideoOverlay[] {
+    if (!canvasJSON?.objects) return [];
+    const results: VideoOverlay[] = [];
+
+    for (const obj of canvasJSON.objects) {
+        if (obj.isVideoPlaceholder && obj.videoUrl) {
+            const scaleX = obj.scaleX || 1;
+            const scaleY = obj.scaleY || 1;
+            const w = (obj.width || 640) * scaleX;
+            const h = (obj.height || 360) * scaleY;
+            results.push({
+                url: obj.videoUrl,
                 left: obj.left || 0,
                 top: obj.top || 0,
                 width: w,
@@ -67,10 +98,15 @@ export function SlideDisplay({ data, isDark, apiUrl }: SlideDisplayProps) {
     const [fabricLoaded, setFabricLoaded] = useState(false);
     const [displayScale, setDisplayScale] = useState(1);
 
-    // Extract YouTube overlays from canvas JSON
+    // Extract overlays from canvas JSON
     const youtubeOverlays = useMemo(() => {
         if (!data?.canvasJSON) return [];
         return findYoutubeObjects(data.canvasJSON);
+    }, [data?.canvasJSON]);
+
+    const videoOverlays = useMemo(() => {
+        if (!data?.canvasJSON) return [];
+        return findVideoObjects(data.canvasJSON);
     }, [data?.canvasJSON]);
 
     // Track container size for responsive scaling
@@ -95,7 +131,6 @@ export function SlideDisplay({ data, isDark, apiUrl }: SlideDisplayProps) {
             const fabricModule = await import('fabric');
             if (!mounted || !canvasRef.current) return;
 
-            // Create a static canvas (no interaction) for display
             const canvas = new fabricModule.StaticCanvas(canvasRef.current, {
                 width: CANVAS_WIDTH,
                 height: CANVAS_HEIGHT,
@@ -103,9 +138,9 @@ export function SlideDisplay({ data, isDark, apiUrl }: SlideDisplayProps) {
 
             try {
                 await canvas.loadFromJSON(data.canvasJSON);
-                // Hide YouTube placeholder groups so iframe shows cleanly
+                // Hide YouTube & Video placeholder groups so overlays show cleanly
                 canvas.getObjects().forEach((obj: any) => {
-                    if (obj.isYoutubePlaceholder || obj.youtubeVideoId) {
+                    if (obj.isYoutubePlaceholder || obj.youtubeVideoId || obj.isVideoPlaceholder || obj.videoUrl) {
                         obj.set('opacity', 0);
                     }
                 });
@@ -174,7 +209,7 @@ export function SlideDisplay({ data, isDark, apiUrl }: SlideDisplayProps) {
 
     return (
         <div className="w-full max-w-5xl mx-auto">
-            {/* Canvas display — scale to fit with YouTube overlays */}
+            {/* Canvas display — scale to fit with video overlays */}
             <div
                 ref={containerRef}
                 className="relative w-full"
@@ -217,6 +252,31 @@ export function SlideDisplay({ data, isDark, apiUrl }: SlideDisplayProps) {
                                 }}
                             />
                         ))}
+
+                        {/* MP4 video overlays */}
+                        {videoOverlays.map((vid, idx) => {
+                            const videoSrc = apiUrl ? `${apiUrl}${vid.url}` : vid.url;
+                            return (
+                                <video
+                                    key={`vid-${vid.url}-${idx}`}
+                                    src={videoSrc}
+                                    controls
+                                    playsInline
+                                    style={{
+                                        position: 'absolute',
+                                        left: `${(vid.left / CANVAS_WIDTH) * 100}%`,
+                                        top: `${(vid.top / CANVAS_HEIGHT) * 100}%`,
+                                        width: `${(vid.width / CANVAS_WIDTH) * 100}%`,
+                                        height: `${(vid.height / CANVAS_HEIGHT) * 100}%`,
+                                        border: 'none',
+                                        borderRadius: `${16 * displayScale}px`,
+                                        zIndex: 10,
+                                        objectFit: 'cover',
+                                        backgroundColor: '#000',
+                                    }}
+                                />
+                            );
+                        })}
                     </div>
                 </div>
             </div>

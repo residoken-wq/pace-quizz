@@ -18,8 +18,8 @@ export class UploadController {
             },
         }),
         fileFilter: (req, file, cb) => {
-            if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp|mp3|wav|ogg|m4a)$/i)) {
-                return cb(new HttpException('Only image and audio files are allowed!', HttpStatus.BAD_REQUEST), false);
+            if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp|mp3|wav|ogg|m4a|mp4|webm|mov)$/i)) {
+                return cb(new HttpException('Only image, audio and video files are allowed!', HttpStatus.BAD_REQUEST), false);
             }
             cb(null, true);
         },

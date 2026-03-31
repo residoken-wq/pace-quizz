@@ -1,4 +1,4 @@
-import { IsString, IsInt, IsOptional, IsEnum, IsObject, IsArray } from 'class-validator';
+import { IsString, IsInt, IsOptional, IsEnum, Allow } from 'class-validator';
 
 export class CreateQuestionDto {
     @IsString()
@@ -11,11 +11,12 @@ export class CreateQuestionDto {
     order: number;
 
     @IsOptional()
-    @IsEnum(['MULTIPLE_CHOICE', 'WORD_CLOUD', 'RATING_SCALE', 'POLL'])
-    type?: 'MULTIPLE_CHOICE' | 'WORD_CLOUD' | 'RATING_SCALE' | 'POLL';
+    @IsEnum(['MULTIPLE_CHOICE', 'WORD_CLOUD', 'RATING_SCALE', 'POLL', 'SLIDE'])
+    type?: 'MULTIPLE_CHOICE' | 'WORD_CLOUD' | 'RATING_SCALE' | 'POLL' | 'SLIDE';
 
     @IsOptional()
-    options?: any; // JSON array of options
+    @Allow()
+    options?: any; // JSON — array of options OR slide canvas data
 
     @IsOptional()
     @IsInt()

@@ -34,8 +34,13 @@ type SlideCanvasEditorProps = {
     value: SlideData | null;
     onChange: (data: SlideData) => void;
     apiUrl: string;
-    token: string;
+    token?: string;
 };
+
+// Read token fresh from localStorage at request time to avoid stale tokens
+function getFreshToken(): string {
+    return (typeof window !== 'undefined' ? localStorage.getItem('access_token') : null) || '';
+}
 
 const CANVAS_WIDTH = 1920;
 const CANVAS_HEIGHT = 1080;
@@ -70,9 +75,9 @@ function extractYoutubeId(url: string): string | null {
 }
 
 // Custom Fabric properties that must be serialized in toJSON
-const CUSTOM_FABRIC_PROPS = ['isYoutubePlaceholder', 'youtubeVideoId'];
+const CUSTOM_FABRIC_PROPS = ['isYoutubePlaceholder', 'youtubeVideoId', 'isVideoPlaceholder', 'videoUrl'];
 
-export function SlideCanvasEditor({ value, onChange, apiUrl, token }: SlideCanvasEditorProps) {
+export function SlideCanvasEditor({ value, onChange, apiUrl }: SlideCanvasEditorProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const fabricCanvasRef = useRef<any>(null);
     const [isReady, setIsReady] = useState(false);
@@ -233,7 +238,7 @@ export function SlideCanvasEditor({ value, onChange, apiUrl, token }: SlideCanva
         try {
             const res = await fetch(`${apiUrl}/upload`, {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` },
+                headers: { 'Authorization': `Bearer ${getFreshToken()}` },
                 body: formData,
             });
             if (res.ok) {
@@ -357,7 +362,7 @@ export function SlideCanvasEditor({ value, onChange, apiUrl, token }: SlideCanva
         try {
             const res = await fetch(`${apiUrl}/upload`, {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` },
+                headers: { 'Authorization': `Bearer ${getFreshToken()}` },
                 body: formData,
             });
             if (res.ok) {
@@ -384,7 +389,7 @@ export function SlideCanvasEditor({ value, onChange, apiUrl, token }: SlideCanva
         try {
             const res = await fetch(`${apiUrl}/upload`, {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` },
+                headers: { 'Authorization': `Bearer ${getFreshToken()}` },
                 body: formData,
             });
             if (res.ok) {
@@ -493,6 +498,91 @@ export function SlideCanvasEditor({ value, onChange, apiUrl, token }: SlideCanva
         setYoutubeUrl('');
     };
 
+    // ─── Add uploaded MP4 video placeholder ───
+    const addVideoFile = async (file: File) => {
+        if (!fabricCanvasRef.current || !fabric) return;
+
+        const formData = new FormData();
+        formData.append('file', file);
+        try {
+            const res = await fetch(`${apiUrl}/upload`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${getFreshToken()}` },
+                body: formData,
+            });
+            if (!res.ok) return;
+            const data = await res.json();
+            const videoFileUrl = data.url; // relative URL e.g. /uploads/file-xxx.mp4
+
+            const canvas = fabricCanvasRef.current;
+            const W = 640;
+            const H = 360;
+
+            const bg = new fabric.Rect({
+                width: W,
+                height: H,
+                fill: '#1a1a2e',
+                rx: 16,
+                ry: 16,
+            });
+
+            const playCircle = new fabric.Circle({
+                radius: 36,
+                fill: '#6366f1',
+                left: W / 2,
+                top: H / 2,
+                originX: 'center',
+                originY: 'center',
+            });
+
+            const playTriangle = new fabric.Triangle({
+                width: 28,
+                height: 32,
+                fill: '#ffffff',
+                left: W / 2 + 4,
+                top: H / 2,
+                originX: 'center',
+                originY: 'center',
+                angle: 90,
+            });
+
+            const label = new fabric.Text(`🎬 ${file.name}`, {
+                fontSize: 18,
+                fill: '#a5b4fc',
+                fontFamily: 'Inter, sans-serif',
+                left: W / 2,
+                top: H - 36,
+                originX: 'center',
+                originY: 'center',
+                fontWeight: 'bold',
+            });
+
+            const group = new fabric.Group([bg, playCircle, playTriangle, label], {
+                left: CANVAS_WIDTH / 2 - W / 2,
+                top: CANVAS_HEIGHT / 2 - H / 2,
+                lockRotation: true,
+                isVideoPlaceholder: true,
+                videoUrl: videoFileUrl,
+            });
+
+            (group as any).toObject = (function (toObject) {
+                return function (this: any, ...args: any[]) {
+                    return {
+                        ...toObject.apply(this, args),
+                        isVideoPlaceholder: this.isVideoPlaceholder,
+                        videoUrl: this.videoUrl,
+                    };
+                };
+            })((group as any).toObject);
+
+            canvas.add(group);
+            canvas.setActiveObject(group);
+            canvas.renderAll();
+        } catch (err) {
+            console.error('Video upload failed:', err);
+        }
+    };
+
     const deleteSelected = () => {
         if (!fabricCanvasRef.current) return;
         const canvas = fabricCanvasRef.current;
@@ -525,7 +615,7 @@ export function SlideCanvasEditor({ value, onChange, apiUrl, token }: SlideCanva
                 {[
                     { id: 'text' as const, label: 'Văn bản', icon: Type, color: 'text-blue-400' },
                     { id: 'image' as const, label: 'Hình ảnh', icon: ImageIcon, color: 'text-emerald-400' },
-                    { id: 'video' as const, label: 'YouTube', icon: Youtube, color: 'text-red-400' },
+                    { id: 'video' as const, label: 'Video', icon: Film, color: 'text-red-400' },
                     { id: 'shapes' as const, label: 'Hình dạng', icon: Square, color: 'text-amber-400' },
                     { id: 'background' as const, label: 'Nền', icon: Palette, color: 'text-purple-400' },
                     { id: 'sound' as const, label: 'Âm thanh', icon: Volume2, color: 'text-rose-400' },
@@ -604,49 +694,79 @@ export function SlideCanvasEditor({ value, onChange, apiUrl, token }: SlideCanva
                     )}
 
                     {activeTab === 'video' && (
-                        <div className="space-y-3">
-                            <p className="text-xs font-bold text-slate-500 mb-1">Nhúng Video YouTube</p>
-                            <div className="flex gap-2">
-                                <div className="flex-1 relative">
-                                    <Link size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <div className="space-y-4">
+                            {/* YouTube embed */}
+                            <div className="space-y-2">
+                                <p className="text-xs font-bold text-slate-500 flex items-center gap-1.5"><Youtube size={13} className="text-red-500" /> Nhúng Video YouTube</p>
+                                <div className="flex gap-2">
+                                    <div className="flex-1 relative">
+                                        <Link size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                        <input
+                                            type="text"
+                                            value={youtubeUrl}
+                                            onChange={(e) => setYoutubeUrl(e.target.value)}
+                                            placeholder="Dán link YouTube vào đây..."
+                                            className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-slate-300 focus:border-red-400 focus:ring-2 focus:ring-red-100 outline-none transition-all font-medium"
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' && youtubeUrl.trim()) {
+                                                    addYoutubeVideo(youtubeUrl);
+                                                }
+                                            }}
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={() => addYoutubeVideo(youtubeUrl)}
+                                        disabled={!youtubeUrl.trim() || !extractYoutubeId(youtubeUrl)}
+                                        className="flex items-center gap-1.5 bg-red-500 hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm"
+                                    >
+                                        <Play size={14} />
+                                        Chèn
+                                    </button>
+                                </div>
+                                {youtubeUrl && !extractYoutubeId(youtubeUrl) && (
+                                    <p className="text-xs text-amber-500 font-semibold">⚠ Link YouTube không hợp lệ.</p>
+                                )}
+                                {youtubeUrl && extractYoutubeId(youtubeUrl) && (
+                                    <div className="bg-white border border-slate-200 rounded-xl p-3 flex items-center gap-3">
+                                        <img
+                                            src={`https://img.youtube.com/vi/${extractYoutubeId(youtubeUrl)}/mqdefault.jpg`}
+                                            alt="Thumbnail"
+                                            className="w-24 h-auto rounded-lg"
+                                        />
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-xs font-bold text-slate-700 truncate">Video ID: {extractYoutubeId(youtubeUrl)}</p>
+                                            <p className="text-[11px] text-slate-400 mt-0.5">Nhấn "Chèn" hoặc Enter</p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Divider */}
+                            <div className="flex items-center gap-3">
+                                <div className="flex-1 border-t border-slate-200" />
+                                <span className="text-[10px] font-bold text-slate-400 uppercase">hoặc</span>
+                                <div className="flex-1 border-t border-slate-200" />
+                            </div>
+
+                            {/* MP4 upload */}
+                            <div className="space-y-2">
+                                <p className="text-xs font-bold text-slate-500 flex items-center gap-1.5"><Film size={13} className="text-indigo-500" /> Tải lên Video (MP4)</p>
+                                <label className="cursor-pointer flex items-center gap-2 bg-white border-2 border-dashed border-slate-300 hover:border-indigo-400 rounded-xl p-4 transition-all group">
                                     <input
-                                        type="text"
-                                        value={youtubeUrl}
-                                        onChange={(e) => setYoutubeUrl(e.target.value)}
-                                        placeholder="Dán link YouTube vào đây..."
-                                        className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-slate-300 focus:border-red-400 focus:ring-2 focus:ring-red-100 outline-none transition-all font-medium"
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter' && youtubeUrl.trim()) {
-                                                addYoutubeVideo(youtubeUrl);
-                                            }
+                                        type="file"
+                                        accept="video/mp4,video/webm,video/quicktime"
+                                        className="hidden"
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) addVideoFile(file);
                                         }}
                                     />
-                                </div>
-                                <button
-                                    onClick={() => addYoutubeVideo(youtubeUrl)}
-                                    disabled={!youtubeUrl.trim() || !extractYoutubeId(youtubeUrl)}
-                                    className="flex items-center gap-1.5 bg-red-500 hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm"
-                                >
-                                    <Play size={14} />
-                                    Chèn Video
-                                </button>
+                                    <Upload size={18} className="text-slate-400 group-hover:text-indigo-500" />
+                                    <span className="text-sm font-semibold text-slate-500 group-hover:text-indigo-600">
+                                        Chọn file video (MP4, WebM — tối đa 20MB)
+                                    </span>
+                                </label>
                             </div>
-                            {youtubeUrl && !extractYoutubeId(youtubeUrl) && (
-                                <p className="text-xs text-amber-500 font-semibold">⚠ Link YouTube không hợp lệ. Vui lòng kiểm tra lại.</p>
-                            )}
-                            {youtubeUrl && extractYoutubeId(youtubeUrl) && (
-                                <div className="bg-white border border-slate-200 rounded-xl p-3 flex items-center gap-3">
-                                    <img
-                                        src={`https://img.youtube.com/vi/${extractYoutubeId(youtubeUrl)}/mqdefault.jpg`}
-                                        alt="Thumbnail"
-                                        className="w-28 h-auto rounded-lg"
-                                    />
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-xs font-bold text-slate-700 truncate">Video ID: {extractYoutubeId(youtubeUrl)}</p>
-                                        <p className="text-[11px] text-slate-400 mt-0.5">Nhấn "Chèn Video" hoặc Enter để thêm vào slide</p>
-                                    </div>
-                                </div>
-                            )}
                         </div>
                     )}
 
