@@ -166,6 +166,32 @@ export function SlideDisplay({ data, isDark, apiUrl }: SlideDisplayProps) {
         };
     }, [data?.canvasJSON]);
 
+    // Attempt to auto-fullscreen the first video element if present
+    useEffect(() => {
+        if (!fabricLoaded) return;
+        
+        const autoFullscreen = async () => {
+            const mediaIds = [
+                ...videoOverlays.map((vid, idx) => `vid-${idx}`),
+                ...youtubeOverlays.map((yt, idx) => `yt-${idx}`)
+            ];
+            
+            if (mediaIds.length > 0) {
+                const firstMedia = document.getElementById(mediaIds[0]);
+                if (firstMedia && firstMedia.requestFullscreen) {
+                    try {
+                        await firstMedia.requestFullscreen();
+                    } catch (err) {
+                        console.warn("Auto-fullscreen blocked by browser:", err);
+                    }
+                }
+            }
+        };
+
+        const timer = setTimeout(autoFullscreen, 500);
+        return () => clearTimeout(timer);
+    }, [fabricLoaded, videoOverlays, youtubeOverlays]);
+
     // Handle audio
     useEffect(() => {
         if (data?.sound?.url && data.sound.autoplay) {
@@ -241,7 +267,8 @@ export function SlideDisplay({ data, isDark, apiUrl }: SlideDisplayProps) {
                         {youtubeOverlays.map((yt, idx) => (
                             <iframe
                                 key={`yt-${yt.videoId}-${idx}`}
-                                src={`https://www.youtube.com/embed/${yt.videoId}?autoplay=0&rel=0`}
+                                id={`yt-${idx}`}
+                                src={`https://www.youtube.com/embed/${yt.videoId}?autoplay=1&rel=0&mute=0`}
                                 title={`YouTube Video ${yt.videoId}`}
                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                 allowFullScreen
@@ -264,9 +291,11 @@ export function SlideDisplay({ data, isDark, apiUrl }: SlideDisplayProps) {
                             return (
                                 <video
                                     key={`vid-${vid.url}-${idx}`}
+                                    id={`vid-${idx}`}
                                     src={videoSrc}
                                     controls
                                     playsInline
+                                    autoPlay
                                     style={{
                                         position: 'absolute',
                                         left: `${(vid.left / CANVAS_WIDTH) * 100}%`,

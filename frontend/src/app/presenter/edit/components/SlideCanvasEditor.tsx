@@ -204,9 +204,9 @@ export function SlideCanvasEditor({ value, onChange, apiUrl }: SlideCanvasEditor
         const canvas = fabricCanvasRef.current;
 
         const configs = {
-            heading: { text: 'Tiêu đề', fontSize: 48, fontWeight: 'bold', fill: '#ffffff', fontStyle: 'normal' },
-            body: { text: 'Nội dung văn bản', fontSize: 24, fontWeight: 'normal', fill: '#e0e0e0', fontStyle: 'normal' },
-            caption: { text: 'Chú thích', fontSize: 16, fontWeight: 'normal', fill: '#a0a0a0', fontStyle: 'italic' },
+            heading: { text: 'Tiêu đề', fontSize: 48, fontWeight: 'bold', fill: '#000000', fontStyle: 'normal' },
+            body: { text: 'Nội dung văn bản', fontSize: 24, fontWeight: 'normal', fill: '#000000', fontStyle: 'normal' },
+            caption: { text: 'Chú thích', fontSize: 16, fontWeight: 'normal', fill: '#000000', fontStyle: 'italic' },
         };
 
         const cfg = configs[preset];
@@ -922,7 +922,7 @@ export function SlideCanvasEditor({ value, onChange, apiUrl }: SlideCanvasEditor
                                 <label className="text-xs font-bold text-slate-500 mr-1">Màu chữ</label>
                                 <input
                                     type="color"
-                                    value={selectedObject.fill || '#ffffff'}
+                                    value={selectedObject.fill || '#000000'}
                                     onChange={(e) => {
                                         selectedObject.set('fill', e.target.value);
                                         fabricCanvasRef.current?.renderAll();

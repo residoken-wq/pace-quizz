@@ -562,9 +562,11 @@ export default function PresenterLiveView() {
                                         onChange={(e) => setLoopInterval(parseInt(e.target.value))}
                                         className={`text-sm font-bold rounded-lg px-2 py-2 border outline-none cursor-pointer ${isDark ? 'bg-white/10 text-white/70 border-white/10' : 'bg-slate-100 text-slate-700 border-slate-200'}`}
                                     >
-                                        {[5, 10, 15, 20, 30, 45, 60].map(s => (
-                                            <option key={s} value={s}>{s}s</option>
-                                        ))}
+                                        <option value={10}>10s</option>
+                                        <option value={30}>30s</option>
+                                        <option value={60}>1m</option>
+                                        <option value={180}>3m</option>
+                                        <option value={300}>5m</option>
                                     </select>
                                 )}
                             </div>
