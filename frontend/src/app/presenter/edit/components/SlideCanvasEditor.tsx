@@ -5,7 +5,7 @@ import {
     Type, Image as ImageIcon, Film, Square, Circle, Minus, ArrowRight,
     Upload, Trash2, Palette, Volume2, VolumeX, Bold, Italic, Underline,
     AlignLeft, AlignCenter, AlignRight, ChevronDown, Undo2, Redo2,
-    ZoomIn, ZoomOut, Layers, Move, MousePointer, Youtube, Link, Play
+    ZoomIn, ZoomOut, Layers, Move, MousePointer, Youtube, Link, Play, Maximize
 } from 'lucide-react';
 
 // Fabric.js dynamic import to avoid SSR issues
@@ -483,6 +483,7 @@ export function SlideCanvasEditor({ value, onChange, apiUrl }: SlideCanvasEditor
             const obj = originalToObject(propertiesToInclude);
             obj.isYoutubePlaceholder = true;
             obj.youtubeVideoId = videoId;
+            obj.autoFullscreen = !!(group as any).autoFullscreen;
             return obj;
         };
 
@@ -563,6 +564,7 @@ export function SlideCanvasEditor({ value, onChange, apiUrl }: SlideCanvasEditor
                 const obj = originalToObject(propertiesToInclude);
                 obj.isVideoPlaceholder = true;
                 obj.videoUrl = videoFileUrl;
+                obj.autoFullscreen = !!(group as any).autoFullscreen;
                 return obj;
             };
 
@@ -999,6 +1001,41 @@ export function SlideCanvasEditor({ value, onChange, apiUrl }: SlideCanvasEditor
                                     className="w-7 h-7 rounded border border-slate-300 cursor-pointer"
                                 />
                             </div>
+                        </>
+                    )}
+
+                    {(selectedObject.name === 'videoPlaceholder' || selectedObject.name === 'youtubePlaceholder') && (
+                        <>
+                            <button
+                                onClick={() => {
+                                    if (!fabricCanvasRef.current) return;
+                                    selectedObject.set({
+                                        left: 0,
+                                        top: 0,
+                                        scaleX: CANVAS_WIDTH / selectedObject.width!,
+                                        scaleY: CANVAS_HEIGHT / selectedObject.height!
+                                    });
+                                    selectedObject.setCoords();
+                                    fabricCanvasRef.current.renderAll();
+                                    saveState();
+                                }}
+                                className="px-3 py-1.5 bg-indigo-50 border border-indigo-200 text-indigo-600 rounded-lg text-xs font-bold hover:bg-indigo-100 transition-all flex items-center gap-1"
+                            >
+                                <Maximize size={14} /> Kín màn hình
+                            </button>
+                            <label className="flex items-center gap-1.5 ml-3 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={!!(selectedObject as any).autoFullscreen}
+                                    onChange={(e) => {
+                                        (selectedObject as any).autoFullscreen = e.target.checked;
+                                        saveState();
+                                        fabricCanvasRef.current?.renderAll();
+                                    }}
+                                    className="w-4 h-4 rounded text-indigo-500 cursor-pointer"
+                                />
+                                <span className="text-xs font-bold text-slate-600">Auto Fullscreen lúc trình chiếu</span>
+                            </label>
                         </>
                     )}
 

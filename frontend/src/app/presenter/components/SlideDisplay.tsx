@@ -29,6 +29,7 @@ type YoutubeOverlay = {
     top: number;
     width: number;
     height: number;
+    autoFullscreen?: boolean;
 };
 
 type VideoOverlay = {
@@ -37,6 +38,7 @@ type VideoOverlay = {
     top: number;
     width: number;
     height: number;
+    autoFullscreen?: boolean;
 };
 
 const CANVAS_WIDTH = 1920;
@@ -59,6 +61,7 @@ function findYoutubeObjects(canvasJSON: any): YoutubeOverlay[] {
                 top: obj.top || 0,
                 width: w,
                 height: h,
+                autoFullscreen: obj.autoFullscreen,
             });
         }
     }
@@ -83,6 +86,7 @@ function findVideoObjects(canvasJSON: any): VideoOverlay[] {
                 top: obj.top || 0,
                 width: w,
                 height: h,
+                autoFullscreen: obj.autoFullscreen,
             });
         }
     }
@@ -171,10 +175,13 @@ export function SlideDisplay({ data, isDark, apiUrl }: SlideDisplayProps) {
         if (!fabricLoaded) return;
         
         const autoFullscreen = async () => {
-            const mediaIds = [
-                ...videoOverlays.map((vid, idx) => `vid-${idx}`),
-                ...youtubeOverlays.map((yt, idx) => `yt-${idx}`)
-            ];
+            const mediaIds: string[] = [];
+            videoOverlays.forEach((vid, idx) => {
+                if (vid.autoFullscreen) mediaIds.push(`vid-${idx}`);
+            });
+            youtubeOverlays.forEach((yt, idx) => {
+                if (yt.autoFullscreen) mediaIds.push(`yt-${idx}`);
+            });
             
             if (mediaIds.length > 0) {
                 const firstMedia = document.getElementById(mediaIds[0]);
