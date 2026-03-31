@@ -5,7 +5,7 @@ import {
     Type, Image as ImageIcon, Film, Square, Circle, Minus, ArrowRight,
     Upload, Trash2, Palette, Volume2, VolumeX, Bold, Italic, Underline,
     AlignLeft, AlignCenter, AlignRight, ChevronDown, Undo2, Redo2,
-    ZoomIn, ZoomOut, Layers, Move, MousePointer
+    ZoomIn, ZoomOut, Layers, Move, MousePointer, Youtube, Link, Play
 } from 'lucide-react';
 
 // Fabric.js dynamic import to avoid SSR issues
@@ -54,6 +54,24 @@ const SHAPE_PRESETS = [
     { name: 'Mũi tên', icon: ArrowRight, type: 'arrow' },
 ];
 
+// Extract YouTube video ID from various URL formats
+function extractYoutubeId(url: string): string | null {
+    const patterns = [
+        /(?:youtube\.com\/watch\?v=)([a-zA-Z0-9_-]{11})/,
+        /(?:youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+        /(?:youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+        /(?:youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
+    ];
+    for (const p of patterns) {
+        const m = url.match(p);
+        if (m) return m[1];
+    }
+    return null;
+}
+
+// Custom Fabric properties that must be serialized in toJSON
+const CUSTOM_FABRIC_PROPS = ['isYoutubePlaceholder', 'youtubeVideoId'];
+
 export function SlideCanvasEditor({ value, onChange, apiUrl, token }: SlideCanvasEditorProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const fabricCanvasRef = useRef<any>(null);
@@ -66,6 +84,7 @@ export function SlideCanvasEditor({ value, onChange, apiUrl, token }: SlideCanva
     const [history, setHistory] = useState<string[]>([]);
     const [historyIdx, setHistoryIdx] = useState(-1);
     const isUpdatingRef = useRef(false);
+    const [youtubeUrl, setYoutubeUrl] = useState('');
     const containerRef = useRef<HTMLDivElement>(null);
 
     // Responsive scaling
@@ -142,7 +161,8 @@ export function SlideCanvasEditor({ value, onChange, apiUrl, token }: SlideCanva
     const saveState = useCallback(() => {
         if (!fabricCanvasRef.current || isUpdatingRef.current) return;
         const canvas = fabricCanvasRef.current;
-        const json = canvas.toJSON();
+        // Include custom YouTube properties in serialized JSON
+        const json = canvas.toJSON(CUSTOM_FABRIC_PROPS);
 
         const slideData: SlideData = {
             canvasJSON: json,
@@ -393,6 +413,86 @@ export function SlideCanvasEditor({ value, onChange, apiUrl, token }: SlideCanva
         }
     };
 
+    // ─── Add YouTube video placeholder ───
+    const addYoutubeVideo = (url: string) => {
+        if (!fabricCanvasRef.current || !fabric) return;
+        const videoId = extractYoutubeId(url);
+        if (!videoId) return;
+
+        const canvas = fabricCanvasRef.current;
+        const W = 640;
+        const H = 360;
+
+        // Dark background rect
+        const bg = new fabric.Rect({
+            width: W,
+            height: H,
+            fill: '#000000',
+            rx: 16,
+            ry: 16,
+        });
+
+        // YouTube play button circle
+        const playCircle = new fabric.Circle({
+            radius: 36,
+            fill: '#FF0000',
+            left: W / 2,
+            top: H / 2,
+            originX: 'center',
+            originY: 'center',
+        });
+
+        // Play triangle
+        const playTriangle = new fabric.Triangle({
+            width: 28,
+            height: 32,
+            fill: '#ffffff',
+            left: W / 2 + 4,
+            top: H / 2,
+            originX: 'center',
+            originY: 'center',
+            angle: 90,
+        });
+
+        // Video ID label
+        const label = new fabric.Text(`YouTube: ${videoId}`, {
+            fontSize: 22,
+            fill: '#ffffff',
+            fontFamily: 'Inter, sans-serif',
+            left: W / 2,
+            top: H - 40,
+            originX: 'center',
+            originY: 'center',
+            fontWeight: 'bold',
+        });
+
+        const group = new fabric.Group([bg, playCircle, playTriangle, label], {
+            left: CANVAS_WIDTH / 2 - W / 2,
+            top: CANVAS_HEIGHT / 2 - H / 2,
+            // Lock rotation so iframe overlay always aligns
+            lockRotation: true,
+            // Custom properties
+            isYoutubePlaceholder: true,
+            youtubeVideoId: videoId,
+        });
+
+        // Ensure custom props survive toObject/toJSON
+        (group as any).toObject = (function (toObject) {
+            return function (this: any, ...args: any[]) {
+                return {
+                    ...toObject.apply(this, args),
+                    isYoutubePlaceholder: this.isYoutubePlaceholder,
+                    youtubeVideoId: this.youtubeVideoId,
+                };
+            };
+        })((group as any).toObject);
+
+        canvas.add(group);
+        canvas.setActiveObject(group);
+        canvas.renderAll();
+        setYoutubeUrl('');
+    };
+
     const deleteSelected = () => {
         if (!fabricCanvasRef.current) return;
         const canvas = fabricCanvasRef.current;
@@ -425,6 +525,7 @@ export function SlideCanvasEditor({ value, onChange, apiUrl, token }: SlideCanva
                 {[
                     { id: 'text' as const, label: 'Văn bản', icon: Type, color: 'text-blue-400' },
                     { id: 'image' as const, label: 'Hình ảnh', icon: ImageIcon, color: 'text-emerald-400' },
+                    { id: 'video' as const, label: 'YouTube', icon: Youtube, color: 'text-red-400' },
                     { id: 'shapes' as const, label: 'Hình dạng', icon: Square, color: 'text-amber-400' },
                     { id: 'background' as const, label: 'Nền', icon: Palette, color: 'text-purple-400' },
                     { id: 'sound' as const, label: 'Âm thanh', icon: Volume2, color: 'text-rose-400' },
@@ -499,6 +600,53 @@ export function SlideCanvasEditor({ value, onChange, apiUrl, token }: SlideCanva
                                     Kéo thả hoặc click để tải ảnh lên
                                 </span>
                             </label>
+                        </div>
+                    )}
+
+                    {activeTab === 'video' && (
+                        <div className="space-y-3">
+                            <p className="text-xs font-bold text-slate-500 mb-1">Nhúng Video YouTube</p>
+                            <div className="flex gap-2">
+                                <div className="flex-1 relative">
+                                    <Link size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                    <input
+                                        type="text"
+                                        value={youtubeUrl}
+                                        onChange={(e) => setYoutubeUrl(e.target.value)}
+                                        placeholder="Dán link YouTube vào đây..."
+                                        className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-slate-300 focus:border-red-400 focus:ring-2 focus:ring-red-100 outline-none transition-all font-medium"
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' && youtubeUrl.trim()) {
+                                                addYoutubeVideo(youtubeUrl);
+                                            }
+                                        }}
+                                    />
+                                </div>
+                                <button
+                                    onClick={() => addYoutubeVideo(youtubeUrl)}
+                                    disabled={!youtubeUrl.trim() || !extractYoutubeId(youtubeUrl)}
+                                    className="flex items-center gap-1.5 bg-red-500 hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm"
+                                >
+                                    <Play size={14} />
+                                    Chèn Video
+                                </button>
+                            </div>
+                            {youtubeUrl && !extractYoutubeId(youtubeUrl) && (
+                                <p className="text-xs text-amber-500 font-semibold">⚠ Link YouTube không hợp lệ. Vui lòng kiểm tra lại.</p>
+                            )}
+                            {youtubeUrl && extractYoutubeId(youtubeUrl) && (
+                                <div className="bg-white border border-slate-200 rounded-xl p-3 flex items-center gap-3">
+                                    <img
+                                        src={`https://img.youtube.com/vi/${extractYoutubeId(youtubeUrl)}/mqdefault.jpg`}
+                                        alt="Thumbnail"
+                                        className="w-28 h-auto rounded-lg"
+                                    />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-xs font-bold text-slate-700 truncate">Video ID: {extractYoutubeId(youtubeUrl)}</p>
+                                        <p className="text-[11px] text-slate-400 mt-0.5">Nhấn "Chèn Video" hoặc Enter để thêm vào slide</p>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 

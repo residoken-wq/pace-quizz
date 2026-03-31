@@ -18,12 +18,12 @@ export class UploadController {
             },
         }),
         fileFilter: (req, file, cb) => {
-            if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
-                return cb(new HttpException('Only image files are allowed!', HttpStatus.BAD_REQUEST), false);
+            if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp|mp3|wav|ogg|m4a)$/i)) {
+                return cb(new HttpException('Only image and audio files are allowed!', HttpStatus.BAD_REQUEST), false);
             }
             cb(null, true);
         },
-        limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+        limits: { fileSize: 20 * 1024 * 1024 } // 20MB limit for media files
     }))
     uploadFile(@UploadedFile() file: Express.Multer.File) {
         if (!file) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { Volume2, VolumeX, Play, Pause } from 'lucide-react';
 
 type SlideData = {
@@ -23,14 +23,68 @@ type SlideDisplayProps = {
     apiUrl?: string;
 };
 
+type YoutubeOverlay = {
+    videoId: string;
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+};
+
 const CANVAS_WIDTH = 1920;
 const CANVAS_HEIGHT = 1080;
 
+// Recursively search canvas JSON for YouTube placeholders
+function findYoutubeObjects(canvasJSON: any): YoutubeOverlay[] {
+    if (!canvasJSON?.objects) return [];
+    const results: YoutubeOverlay[] = [];
+
+    for (const obj of canvasJSON.objects) {
+        if (obj.isYoutubePlaceholder && obj.youtubeVideoId) {
+            // For groups, Fabric stores left/top/width/height and scaleX/scaleY
+            const scaleX = obj.scaleX || 1;
+            const scaleY = obj.scaleY || 1;
+            const w = (obj.width || 640) * scaleX;
+            const h = (obj.height || 360) * scaleY;
+            results.push({
+                videoId: obj.youtubeVideoId,
+                left: obj.left || 0,
+                top: obj.top || 0,
+                width: w,
+                height: h,
+            });
+        }
+    }
+
+    return results;
+}
+
 export function SlideDisplay({ data, isDark, apiUrl }: SlideDisplayProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [fabricLoaded, setFabricLoaded] = useState(false);
+    const [displayScale, setDisplayScale] = useState(1);
+
+    // Extract YouTube overlays from canvas JSON
+    const youtubeOverlays = useMemo(() => {
+        if (!data?.canvasJSON) return [];
+        return findYoutubeObjects(data.canvasJSON);
+    }, [data?.canvasJSON]);
+
+    // Track container size for responsive scaling
+    useEffect(() => {
+        if (!containerRef.current) return;
+        const observer = new ResizeObserver((entries) => {
+            const { width } = entries[0].contentRect;
+            if (width > 0) {
+                setDisplayScale(width / CANVAS_WIDTH);
+            }
+        });
+        observer.observe(containerRef.current);
+        return () => observer.disconnect();
+    }, []);
 
     // Render canvas from saved JSON
     useEffect(() => {
@@ -49,6 +103,12 @@ export function SlideDisplay({ data, isDark, apiUrl }: SlideDisplayProps) {
 
             try {
                 await canvas.loadFromJSON(data.canvasJSON);
+                // Hide YouTube placeholder groups so iframe shows cleanly
+                canvas.getObjects().forEach((obj: any) => {
+                    if (obj.isYoutubePlaceholder || obj.youtubeVideoId) {
+                        obj.set('opacity', 0);
+                    }
+                });
                 canvas.renderAll();
             } catch (e) {
                 console.error('Failed to render slide:', e);
@@ -114,11 +174,15 @@ export function SlideDisplay({ data, isDark, apiUrl }: SlideDisplayProps) {
 
     return (
         <div className="w-full max-w-5xl mx-auto">
-            {/* Canvas display — scale to fit */}
-            <div className="relative w-full" style={{ paddingBottom: `${(CANVAS_HEIGHT / CANVAS_WIDTH) * 100}%` }}>
+            {/* Canvas display — scale to fit with YouTube overlays */}
+            <div
+                ref={containerRef}
+                className="relative w-full"
+                style={{ paddingBottom: `${(CANVAS_HEIGHT / CANVAS_WIDTH) * 100}%` }}
+            >
                 <div className="absolute inset-0 flex items-center justify-center">
                     <div
-                        className="w-full h-full rounded-2xl overflow-hidden shadow-2xl"
+                        className="w-full h-full rounded-2xl overflow-hidden shadow-2xl relative"
                         style={{
                             maxWidth: CANVAS_WIDTH,
                             maxHeight: CANVAS_HEIGHT,
@@ -132,6 +196,27 @@ export function SlideDisplay({ data, isDark, apiUrl }: SlideDisplayProps) {
                                 objectFit: 'contain',
                             }}
                         />
+
+                        {/* YouTube iframe overlays */}
+                        {youtubeOverlays.map((yt, idx) => (
+                            <iframe
+                                key={`yt-${yt.videoId}-${idx}`}
+                                src={`https://www.youtube.com/embed/${yt.videoId}?autoplay=0&rel=0`}
+                                title={`YouTube Video ${yt.videoId}`}
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                                style={{
+                                    position: 'absolute',
+                                    left: `${(yt.left / CANVAS_WIDTH) * 100}%`,
+                                    top: `${(yt.top / CANVAS_HEIGHT) * 100}%`,
+                                    width: `${(yt.width / CANVAS_WIDTH) * 100}%`,
+                                    height: `${(yt.height / CANVAS_HEIGHT) * 100}%`,
+                                    border: 'none',
+                                    borderRadius: `${16 * displayScale}px`,
+                                    zIndex: 10,
+                                }}
+                            />
+                        ))}
                     </div>
                 </div>
             </div>
