@@ -134,6 +134,24 @@ export function SlideCanvasEditor({ value, onChange, apiUrl }: SlideCanvasEditor
             if (value?.canvasJSON) {
                 try {
                     await canvas.loadFromJSON(value.canvasJSON);
+                    
+                    // Khôi phục lại các thuộc tính bị fabric xoá khi parse JSON (để hiển thị UI chuẩn)
+                    canvas.getObjects().forEach((obj: any) => {
+                        if (obj.isVideoPlaceholder || obj.isYoutubePlaceholder) {
+                            obj.name = obj.isVideoPlaceholder ? 'videoPlaceholder' : 'youtubePlaceholder';
+                            const original = obj.toObject.bind(obj);
+                            obj.toObject = function(propertiesToInclude: any[]) {
+                                const payload = original(propertiesToInclude);
+                                payload.isVideoPlaceholder = obj.isVideoPlaceholder;
+                                payload.isYoutubePlaceholder = obj.isYoutubePlaceholder;
+                                payload.youtubeVideoId = obj.youtubeVideoId;
+                                payload.videoUrl = obj.videoUrl;
+                                payload.autoFullscreen = !!obj.autoFullscreen;
+                                return payload;
+                            };
+                        }
+                    });
+
                     canvas.renderAll();
                 } catch (e) {
                     console.error('Failed to load canvas JSON:', e);
@@ -475,6 +493,7 @@ export function SlideCanvasEditor({ value, onChange, apiUrl }: SlideCanvasEditor
             left: CANVAS_WIDTH / 2 - W / 2,
             top: CANVAS_HEIGHT / 2 - H / 2,
             lockRotation: true,
+            name: 'youtubePlaceholder'
         });
 
         // Ensure custom props survive toObject/toJSON via explicit override
@@ -556,6 +575,7 @@ export function SlideCanvasEditor({ value, onChange, apiUrl }: SlideCanvasEditor
                 left: CANVAS_WIDTH / 2 - W / 2,
                 top: CANVAS_HEIGHT / 2 - H / 2,
                 lockRotation: true,
+                name: 'videoPlaceholder'
             });
 
             // Forecefully export custom properties for the presenter view overlays
