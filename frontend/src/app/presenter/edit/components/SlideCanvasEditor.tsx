@@ -37,8 +37,8 @@ type SlideCanvasEditorProps = {
     token: string;
 };
 
-const CANVAS_WIDTH = 960;
-const CANVAS_HEIGHT = 540;
+const CANVAS_WIDTH = 1920;
+const CANVAS_HEIGHT = 1080;
 
 const PRESET_BACKGROUNDS = [
     '#0f0f1a', '#1a1a2e', '#16213e', '#0a3d62',
@@ -66,6 +66,27 @@ export function SlideCanvasEditor({ value, onChange, apiUrl, token }: SlideCanva
     const [history, setHistory] = useState<string[]>([]);
     const [historyIdx, setHistoryIdx] = useState(-1);
     const isUpdatingRef = useRef(false);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    // Responsive scaling
+    useEffect(() => {
+        if (!containerRef.current) return;
+        const observer = new ResizeObserver((entries) => {
+            const entry = entries[0];
+            const containerWidth = entry.contentRect.width;
+            // Provide some padding inside the container
+            const padding = 48;
+            const availableWidth = containerWidth - padding;
+            
+            if (availableWidth <= 0) return;
+            
+            const scale = Math.min(availableWidth / CANVAS_WIDTH, 1);
+            setZoom(scale);
+        });
+        
+        observer.observe(containerRef.current);
+        return () => observer.disconnect();
+    }, []);
 
     // Initialize Fabric.js
     useEffect(() => {
@@ -609,17 +630,27 @@ export function SlideCanvasEditor({ value, onChange, apiUrl, token }: SlideCanva
             )}
 
             {/* ─── Canvas Area ─── */}
-            <div className="bg-slate-100 p-6 flex items-center justify-center" style={{ minHeight: 420 }}>
-                <div
-                    className="shadow-2xl rounded-lg overflow-hidden"
-                    style={{
-                        width: CANVAS_WIDTH,
-                        height: CANVAS_HEIGHT,
-                        transform: `scale(${zoom})`,
-                        transformOrigin: 'center center',
+            <div 
+                ref={containerRef}
+                className="bg-slate-100 p-6 flex flex-col items-center overflow-hidden w-full"
+            >
+                <div 
+                    style={{ 
+                        width: CANVAS_WIDTH * zoom, 
+                        height: CANVAS_HEIGHT * zoom,
+                        position: 'relative'
                     }}
                 >
-                    <canvas ref={canvasRef} />
+                    <div
+                        className="shadow-2xl rounded-lg overflow-hidden absolute top-0 left-0 origin-top-left"
+                        style={{
+                            width: CANVAS_WIDTH,
+                            height: CANVAS_HEIGHT,
+                            transform: `scale(${zoom})`,
+                        }}
+                    >
+                        <canvas ref={canvasRef} />
+                    </div>
                 </div>
             </div>
 

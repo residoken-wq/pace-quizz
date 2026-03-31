@@ -23,8 +23,8 @@ type SlideDisplayProps = {
     apiUrl?: string;
 };
 
-const CANVAS_WIDTH = 960;
-const CANVAS_HEIGHT = 540;
+const CANVAS_WIDTH = 1920;
+const CANVAS_HEIGHT = 1080;
 
 export function SlideDisplay({ data, isDark, apiUrl }: SlideDisplayProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
