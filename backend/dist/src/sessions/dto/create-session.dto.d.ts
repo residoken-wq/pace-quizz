@@ -4,4 +4,5 @@ export declare class CreateSessionDto {
     type?: 'LIVE' | 'SURVEY';
     bannerUrl?: string;
     thankYouMessage?: string;
+    audioUrl?: string;
 }

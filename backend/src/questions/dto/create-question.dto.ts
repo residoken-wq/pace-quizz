@@ -1,4 +1,4 @@
-import { IsString, IsInt, IsOptional, IsEnum, Allow } from 'class-validator';
+import { IsString, IsInt, IsOptional, IsEnum, Allow, IsBoolean } from 'class-validator';
 
 export class CreateQuestionDto {
     @IsString()
@@ -21,4 +21,8 @@ export class CreateQuestionDto {
     @IsOptional()
     @IsInt()
     timeLimit?: number;
+
+    @IsOptional()
+    @IsBoolean()
+    doublePoints?: boolean;
 }

@@ -268,7 +268,8 @@ export class SessionsService {
         // Find if the chosen option is marked as correct
         const chosenOption = qOptions.find(opt => opt.id === answer?.optionId);
         if (chosenOption && chosenOption.isCorrect) {
-          correctAnswers++;
+          const pointsMultiplier = r.question.doublePoints ? 2 : 1;
+          correctAnswers += pointsMultiplier;
         }
 
         if (r.timeTaken) {

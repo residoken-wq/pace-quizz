@@ -25,6 +25,7 @@ type Question = {
     type: QuestionType;
     options: Option[] | any;
     timeLimit?: number;
+    doublePoints?: boolean;
     _isNew?: boolean;
     _isDirty?: boolean;
 };
@@ -38,6 +39,7 @@ type Session = {
     questions: Question[];
     bannerUrl?: string;
     thankYouMessage?: string;
+    audioUrl?: string;
 };
 
 function getApiUrl() {
@@ -156,6 +158,7 @@ export default function SessionEditor() {
                         ? { canvasJSON: null, background: { type: 'color', value: '#1a1a2e' } }
                         : [],
             timeLimit: type === 'SLIDE' ? 0 : 30,
+            doublePoints: false,
             _isNew: true,
             _isDirty: true,
         };
@@ -198,6 +201,7 @@ export default function SessionEditor() {
                     type: q.type,
                     options: q.options,
                     timeLimit: q.timeLimit || null,
+                    doublePoints: q.doublePoints || false,
                 };
                 if (q._isNew || !q.id) {
                     const res = await fetch(`${getApiUrl()}/questions`, {
@@ -329,9 +333,14 @@ export default function SessionEditor() {
                                             <p className={`text-sm font-semibold truncate ${isSelected ? config.textDark : 'text-slate-700'}`}>
                                                 {q.title || 'Chưa có tiêu đề'}
                                             </p>
-                                            <div className="flex items-center gap-1.5 mt-0.5">
+                                            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                                                 <span className="text-[10px]">{config.emoji}</span>
                                                 <span className={`text-[11px] font-medium ${isSelected ? config.color : 'text-slate-400'}`}>{config.label}</span>
+                                                {q.doublePoints && (
+                                                    <span className="text-[10px] font-bold text-orange-500 bg-orange-100 px-1.5 py-0.5 rounded-full ml-1 flex items-center gap-1">
+                                                        🔥 x2
+                                                    </span>
+                                                )}
                                                 {q._isDirty && (
                                                     <span className="w-2 h-2 bg-orange-400 rounded-full animate-pulse ml-1" title="Chưa lưu" />
                                                 )}
@@ -429,6 +438,66 @@ export default function SessionEditor() {
                                         rows={3}
                                         placeholder="Cảm ơn bạn đã tham gia..."
                                     />
+                                </div>
+                                <div>
+                                    <label className="text-xs font-semibold text-slate-600 mb-1 block">Âm thanh nền (MP3 ≤10MB)</label>
+                                    <div className="flex flex-col gap-2">
+                                        {session?.audioUrl && (
+                                            <div className="flex items-center justify-between bg-white border border-slate-200 rounded-lg p-2">
+                                                <audio controls src={`${getApiUrl()}${session.audioUrl}`} className="h-8 max-w-[200px]" />
+                                                <button
+                                                    onClick={async () => {
+                                                        setSession(prev => prev ? { ...prev, audioUrl: undefined } : prev);
+                                                        await fetch(`${getApiUrl()}/sessions/${sessionId}`, {
+                                                            method: 'PATCH',
+                                                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
+                                                            body: JSON.stringify({ audioUrl: null }),
+                                                        });
+                                                    }}
+                                                    className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                                    title="Xóa âm thanh"
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </div>
+                                        )}
+                                        <label className="cursor-pointer block">
+                                            <input
+                                                type="file"
+                                                className="hidden"
+                                                accept="audio/mpeg,audio/mp3,audio/wav"
+                                                onChange={async (e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (!file) return;
+                                                    if (file.size > 10 * 1024 * 1024) {
+                                                        alert('File quá lớn. Vui lòng chọn file <= 10MB');
+                                                        return;
+                                                    }
+                                                    const formData = new FormData();
+                                                    formData.append('file', file);
+                                                    try {
+                                                        const res = await fetch(`${getApiUrl()}/upload`, {
+                                                            method: 'POST',
+                                                            headers: { 'Authorization': `Bearer ${getToken()}` },
+                                                            body: formData,
+                                                        });
+                                                        if (res.ok) {
+                                                            const data = await res.json();
+                                                            setSession(prev => prev ? { ...prev, audioUrl: data.url } : prev);
+                                                            await fetch(`${getApiUrl()}/sessions/${sessionId}`, {
+                                                                method: 'PATCH',
+                                                                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
+                                                                body: JSON.stringify({ audioUrl: data.url }),
+                                                            });
+                                                        }
+                                                    } catch (err) { console.error('Upload failed', err); }
+                                                }}
+                                            />
+                                            <div className="w-full h-10 rounded-lg border-2 border-dashed border-emerald-200 bg-white flex items-center justify-center text-emerald-500 hover:bg-emerald-50 transition-colors">
+                                                <span className="text-xs font-semibold flex items-center gap-1"><Plus size={14} /> Chọn file Audio</span>
+                                            </div>
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -617,6 +686,30 @@ export default function SessionEditor() {
                                     </button>
                                 </div>
                             </div>
+                            
+                            {/* Gamification Settings */}
+                            {selectedQuestion.type === 'MULTIPLE_CHOICE' && (
+                                <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow">
+                                    <div className="flex items-center gap-2.5 mb-3">
+                                        <span className="text-lg">🎮</span>
+                                        <label className="text-sm font-bold text-slate-700">Gamification</label>
+                                    </div>
+                                    <div className="flex items-center justify-between p-4 bg-orange-50 rounded-xl border border-orange-100">
+                                        <div>
+                                            <h4 className="font-bold text-orange-600 flex items-center gap-2">
+                                                <span>🔥 Nhận x2 Điểm</span>
+                                            </h4>
+                                            <p className="text-xs text-orange-500/80 mt-1 font-medium">Nhân đôi điểm số (2000pts) cho người trả lời đúng.</p>
+                                        </div>
+                                        <button
+                                            onClick={() => updateQuestion(selectedIdx, { doublePoints: !selectedQuestion.doublePoints })}
+                                            className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${selectedQuestion.doublePoints ? 'bg-orange-500' : 'bg-slate-300'}`}
+                                        >
+                                            <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${selectedQuestion.doublePoints ? 'translate-x-6' : 'translate-x-1'}`} />
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                             </>
                             )}
                         </div>

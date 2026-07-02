@@ -42,9 +42,10 @@ export declare class UsersService {
             pin: string;
             type: import(".prisma/client").$Enums.SessionType;
             status: import(".prisma/client").$Enums.SessionStatus;
+            hostId: string;
             bannerUrl: string | null;
             thankYouMessage: string | null;
-            hostId: string;
+            audioUrl: string | null;
         }[];
     }>;
     update(id: string, updateUserDto: UpdateUserDto): Promise<{

@@ -42,12 +42,12 @@ __decorate([
             },
         }),
         fileFilter: (req, file, cb) => {
-            if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
-                return cb(new common_1.HttpException('Only image files are allowed!', common_1.HttpStatus.BAD_REQUEST), false);
+            if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp|mp3|wav|ogg|m4a|mp4|webm|mov)$/i)) {
+                return cb(new common_1.HttpException('Only image, audio and video files are allowed!', common_1.HttpStatus.BAD_REQUEST), false);
             }
             cb(null, true);
         },
-        limits: { fileSize: 5 * 1024 * 1024 }
+        limits: { fileSize: 20 * 1024 * 1024 }
     })),
     __param(0, (0, common_1.UploadedFile)()),
     __metadata("design:type", Function),

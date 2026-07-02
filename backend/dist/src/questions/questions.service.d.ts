@@ -14,6 +14,7 @@ export declare class QuestionsService {
         title: string;
         options: import("@prisma/client/runtime/library").JsonValue;
         timeLimit: number | null;
+        doublePoints: boolean;
     }, never, import("@prisma/client/runtime/library").DefaultArgs>;
     findAll(): import(".prisma/client").Prisma.PrismaPromise<({
         session: {
@@ -24,9 +25,10 @@ export declare class QuestionsService {
             pin: string;
             type: import(".prisma/client").$Enums.SessionType;
             status: import(".prisma/client").$Enums.SessionStatus;
+            hostId: string;
             bannerUrl: string | null;
             thankYouMessage: string | null;
-            hostId: string;
+            audioUrl: string | null;
         };
     } & {
         id: string;
@@ -38,6 +40,7 @@ export declare class QuestionsService {
         title: string;
         options: import("@prisma/client/runtime/library").JsonValue;
         timeLimit: number | null;
+        doublePoints: boolean;
     })[]>;
     findBySession(sessionId: string): import(".prisma/client").Prisma.PrismaPromise<({
         tags: {
@@ -54,6 +57,7 @@ export declare class QuestionsService {
         title: string;
         options: import("@prisma/client/runtime/library").JsonValue;
         timeLimit: number | null;
+        doublePoints: boolean;
     })[]>;
     findOne(id: string): Promise<{
         tags: {
@@ -79,6 +83,7 @@ export declare class QuestionsService {
         title: string;
         options: import("@prisma/client/runtime/library").JsonValue;
         timeLimit: number | null;
+        doublePoints: boolean;
     }>;
     update(id: string, updateQuestionDto: UpdateQuestionDto): import(".prisma/client").Prisma.Prisma__QuestionClient<{
         id: string;
@@ -90,6 +95,7 @@ export declare class QuestionsService {
         title: string;
         options: import("@prisma/client/runtime/library").JsonValue;
         timeLimit: number | null;
+        doublePoints: boolean;
     }, never, import("@prisma/client/runtime/library").DefaultArgs>;
     remove(id: string): import(".prisma/client").Prisma.Prisma__QuestionClient<{
         id: string;
@@ -101,5 +107,6 @@ export declare class QuestionsService {
         title: string;
         options: import("@prisma/client/runtime/library").JsonValue;
         timeLimit: number | null;
+        doublePoints: boolean;
     }, never, import("@prisma/client/runtime/library").DefaultArgs>;
 }

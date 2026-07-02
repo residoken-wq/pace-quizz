@@ -17,6 +17,7 @@ class CreateSessionDto {
     type;
     bannerUrl;
     thankYouMessage;
+    audioUrl;
 }
 exports.CreateSessionDto = CreateSessionDto;
 __decorate([
@@ -43,4 +44,9 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateSessionDto.prototype, "thankYouMessage", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateSessionDto.prototype, "audioUrl", void 0);
 //# sourceMappingURL=create-session.dto.js.map

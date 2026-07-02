@@ -19,4 +19,8 @@ export class CreateSessionDto {
     @IsOptional()
     @IsString()
     thankYouMessage?: string;
+
+    @IsOptional()
+    @IsString()
+    audioUrl?: string;
 }

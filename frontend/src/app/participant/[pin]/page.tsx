@@ -18,6 +18,7 @@ interface QuestionState {
     showLeaderboard?: boolean;
     leaderboard?: any[];
     timeLimit?: number;
+    doublePoints?: boolean;
 };
 
 const MASCOTS = ['🐶', '🐱', '🦊', '🐼', '🐨', '🐯', '🐰', '🐸', '🦄', '🦖', '🐙', '👾'];
@@ -57,6 +58,10 @@ export default function ParticipantScreen() {
     // Timing
     const [qStartTime, setQStartTime] = useState<number>(Date.now());
     const [timer, setTimer] = useState<number>(0);
+
+    // Audio
+    const audioRef = useRef<HTMLAudioElement>(null);
+    const [isMuted, setIsMuted] = useState(false);
 
     // Timer countdown effect
     useEffect(() => {
@@ -150,6 +155,11 @@ export default function ParticipantScreen() {
                 setParticipantId(data.id);
                 setHasJoined(true);
                 setQStartTime(Date.now()); // For the first question if it's already active
+                
+                // Attempt to play audio for survey if exists
+                if (sessionData?.type === 'SURVEY' && sessionData?.audioUrl && audioRef.current) {
+                    audioRef.current.play().catch(e => console.log('Audio autoplay blocked', e));
+                }
             } else {
                 const errData = await res.json().catch(() => ({}));
                 alert(`Lỗi tham gia: ${errData.message || res.statusText || 'Không xác định'}`);
@@ -346,7 +356,12 @@ export default function ParticipantScreen() {
                 </div>
             ) : null}
 
-            <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-6 md:p-8 shadow-2xl border border-white/20 flex-1 flex flex-col justify-center">
+            <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-6 md:p-8 shadow-2xl border border-white/20 flex-1 flex flex-col justify-center relative">
+                {liveState.doublePoints && (
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-black text-sm px-4 py-1.5 rounded-full shadow-lg border border-orange-300/50 flex items-center gap-1.5 animate-bounce">
+                        🔥 X2 ĐIỂM
+                    </div>
+                )}
                 <h2 className="text-2xl sm:text-3xl font-bold text-white mb-8 leading-snug drop-shadow-sm text-center">
                     {liveState.title}
                 </h2>
@@ -628,6 +643,16 @@ export default function ParticipantScreen() {
                 <div className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] rounded-full bg-emerald-500/20 blur-[120px] animate-pulse" style={{ animationDelay: '2s' }}></div>
             </div>
 
+            {sessionData?.type === 'SURVEY' && sessionData?.audioUrl && (
+                <audio 
+                    ref={audioRef} 
+                    src={`${getApiUrl()}${sessionData.audioUrl}`} 
+                    loop 
+                    muted={isMuted} 
+                    className="hidden" 
+                />
+            )}
+
             <div className="flex-1 w-full flex flex-col z-10">
                 {/* Header Indicator */}
                 <div className="flex justify-between items-center mb-4 max-w-md mx-auto w-full">
@@ -644,6 +669,14 @@ export default function ParticipantScreen() {
                                 {isConnected ? 'Online' : 'Offline'}
                             </span>
                         </div>
+                    )}
+                    {hasJoined && sessionData?.type === 'SURVEY' && sessionData?.audioUrl && (
+                        <button 
+                            onClick={() => setIsMuted(!isMuted)}
+                            className="w-10 h-10 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-all shadow-lg border border-white/20"
+                        >
+                            {isMuted ? '🔇' : '🔊'}
+                        </button>
                     )}
                 </div>
 

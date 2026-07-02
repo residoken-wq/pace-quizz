@@ -26,6 +26,7 @@ let QuestionsService = class QuestionsService {
                 type: createQuestionDto.type || 'MULTIPLE_CHOICE',
                 options: createQuestionDto.options,
                 timeLimit: createQuestionDto.timeLimit,
+                doublePoints: createQuestionDto.doublePoints || false,
             },
         });
     }

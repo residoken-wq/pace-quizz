@@ -9,12 +9,16 @@ async function bootstrap() {
     app.enableCors({
         origin: [
             'https://quizz.pace.edu.vn',
+            'https://api.quizz.pace.edu.vn',
             'http://localhost:3000',
             'http://localhost:3001',
         ],
-        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+        methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
         credentials: true,
-        allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
+        exposedHeaders: ['Content-Length', 'Content-Type'],
+        preflightContinue: false,
+        optionsSuccessStatus: 204,
     });
     app.useGlobalPipes(new common_1.ValidationPipe({ whitelist: true }));
     try {

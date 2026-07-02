@@ -10,4 +10,8 @@ export class UpdateSessionDto extends PartialType(CreateSessionDto) {
     @IsOptional()
     @IsString()
     thankYouMessage?: string;
+
+    @IsOptional()
+    @IsString()
+    audioUrl?: string;
 }

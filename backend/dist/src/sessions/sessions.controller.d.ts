@@ -12,9 +12,10 @@ export declare class SessionsController {
         pin: string;
         type: import(".prisma/client").$Enums.SessionType;
         status: import(".prisma/client").$Enums.SessionStatus;
+        hostId: string;
         bannerUrl: string | null;
         thankYouMessage: string | null;
-        hostId: string;
+        audioUrl: string | null;
     }>;
     findMySessions(req: any): import(".prisma/client").Prisma.PrismaPromise<({
         questions: {
@@ -27,6 +28,7 @@ export declare class SessionsController {
             title: string;
             options: import("@prisma/client/runtime/library").JsonValue;
             timeLimit: number | null;
+            doublePoints: boolean;
         }[];
     } & {
         id: string;
@@ -36,9 +38,10 @@ export declare class SessionsController {
         pin: string;
         type: import(".prisma/client").$Enums.SessionType;
         status: import(".prisma/client").$Enums.SessionStatus;
+        hostId: string;
         bannerUrl: string | null;
         thankYouMessage: string | null;
-        hostId: string;
+        audioUrl: string | null;
     })[]>;
     findAll(): import(".prisma/client").Prisma.PrismaPromise<({
         host: {
@@ -60,6 +63,7 @@ export declare class SessionsController {
             title: string;
             options: import("@prisma/client/runtime/library").JsonValue;
             timeLimit: number | null;
+            doublePoints: boolean;
         }[];
     } & {
         id: string;
@@ -69,9 +73,10 @@ export declare class SessionsController {
         pin: string;
         type: import(".prisma/client").$Enums.SessionType;
         status: import(".prisma/client").$Enums.SessionStatus;
+        hostId: string;
         bannerUrl: string | null;
         thankYouMessage: string | null;
-        hostId: string;
+        audioUrl: string | null;
     })[]>;
     findByPin(pin: string): Promise<{
         questions: {
@@ -84,6 +89,7 @@ export declare class SessionsController {
             title: string;
             options: import("@prisma/client/runtime/library").JsonValue;
             timeLimit: number | null;
+            doublePoints: boolean;
         }[];
     } & {
         id: string;
@@ -93,9 +99,10 @@ export declare class SessionsController {
         pin: string;
         type: import(".prisma/client").$Enums.SessionType;
         status: import(".prisma/client").$Enums.SessionStatus;
+        hostId: string;
         bannerUrl: string | null;
         thankYouMessage: string | null;
-        hostId: string;
+        audioUrl: string | null;
     }>;
     joinSession(pin: string, body: {
         nickname: string;
@@ -134,6 +141,7 @@ export declare class SessionsController {
             title: string;
             options: import("@prisma/client/runtime/library").JsonValue;
             timeLimit: number | null;
+            doublePoints: boolean;
         }[];
         participants: {
             id: string;
@@ -150,9 +158,10 @@ export declare class SessionsController {
         pin: string;
         type: import(".prisma/client").$Enums.SessionType;
         status: import(".prisma/client").$Enums.SessionStatus;
+        hostId: string;
         bannerUrl: string | null;
         thankYouMessage: string | null;
-        hostId: string;
+        audioUrl: string | null;
     }>;
     update(id: string, updateSessionDto: UpdateSessionDto): import(".prisma/client").Prisma.Prisma__SessionClient<{
         id: string;
@@ -162,9 +171,10 @@ export declare class SessionsController {
         pin: string;
         type: import(".prisma/client").$Enums.SessionType;
         status: import(".prisma/client").$Enums.SessionStatus;
+        hostId: string;
         bannerUrl: string | null;
         thankYouMessage: string | null;
-        hostId: string;
+        audioUrl: string | null;
     }, never, import("@prisma/client/runtime/library").DefaultArgs>;
     remove(id: string): import(".prisma/client").Prisma.Prisma__SessionClient<{
         id: string;
@@ -174,9 +184,10 @@ export declare class SessionsController {
         pin: string;
         type: import(".prisma/client").$Enums.SessionType;
         status: import(".prisma/client").$Enums.SessionStatus;
+        hostId: string;
         bannerUrl: string | null;
         thankYouMessage: string | null;
-        hostId: string;
+        audioUrl: string | null;
     }, never, import("@prisma/client/runtime/library").DefaultArgs>;
     startSession(id: string): Promise<{
         id: string;
@@ -186,9 +197,10 @@ export declare class SessionsController {
         pin: string;
         type: import(".prisma/client").$Enums.SessionType;
         status: import(".prisma/client").$Enums.SessionStatus;
+        hostId: string;
         bannerUrl: string | null;
         thankYouMessage: string | null;
-        hostId: string;
+        audioUrl: string | null;
     }>;
     endSession(id: string): Promise<{
         id: string;
@@ -198,9 +210,10 @@ export declare class SessionsController {
         pin: string;
         type: import(".prisma/client").$Enums.SessionType;
         status: import(".prisma/client").$Enums.SessionStatus;
+        hostId: string;
         bannerUrl: string | null;
         thankYouMessage: string | null;
-        hostId: string;
+        audioUrl: string | null;
     }>;
     resetResults(id: string): Promise<{
         message: string;
@@ -237,7 +250,7 @@ export declare class SessionsController {
     } | {
         id: string;
         title: string;
-        type: "MULTIPLE_CHOICE" | "POLL";
+        type: "MULTIPLE_CHOICE" | "POLL" | "SLIDE";
         order: number;
         options: any[];
         totalResponses: number;

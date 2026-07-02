@@ -16,6 +16,7 @@ const class_validator_1 = require("class-validator");
 class UpdateSessionDto extends (0, mapped_types_1.PartialType)(create_session_dto_1.CreateSessionDto) {
     bannerUrl;
     thankYouMessage;
+    audioUrl;
 }
 exports.UpdateSessionDto = UpdateSessionDto;
 __decorate([
@@ -28,4 +29,9 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], UpdateSessionDto.prototype, "thankYouMessage", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateSessionDto.prototype, "audioUrl", void 0);
 //# sourceMappingURL=update-session.dto.js.map

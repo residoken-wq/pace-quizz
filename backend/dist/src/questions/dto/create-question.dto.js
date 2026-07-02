@@ -18,6 +18,7 @@ class CreateQuestionDto {
     type;
     options;
     timeLimit;
+    doublePoints;
 }
 exports.CreateQuestionDto = CreateQuestionDto;
 __decorate([
@@ -34,11 +35,12 @@ __decorate([
 ], CreateQuestionDto.prototype, "order", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsEnum)(['MULTIPLE_CHOICE', 'WORD_CLOUD', 'RATING_SCALE', 'POLL']),
+    (0, class_validator_1.IsEnum)(['MULTIPLE_CHOICE', 'WORD_CLOUD', 'RATING_SCALE', 'POLL', 'SLIDE']),
     __metadata("design:type", String)
 ], CreateQuestionDto.prototype, "type", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.Allow)(),
     __metadata("design:type", Object)
 ], CreateQuestionDto.prototype, "options", void 0);
 __decorate([
@@ -46,4 +48,9 @@ __decorate([
     (0, class_validator_1.IsInt)(),
     __metadata("design:type", Number)
 ], CreateQuestionDto.prototype, "timeLimit", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], CreateQuestionDto.prototype, "doublePoints", void 0);
 //# sourceMappingURL=create-question.dto.js.map

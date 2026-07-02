@@ -29,6 +29,7 @@ type Question = {
     type: string;
     options: any[];
     timeLimit?: number;
+    doublePoints?: boolean;
 };
 
 type Session = {
@@ -214,6 +215,7 @@ export default function PresenterLiveView() {
             options: q.options,
             status: 'ACTIVE',
             timeLimit: q.timeLimit || 0,
+            doublePoints: q.doublePoints || false,
             showCorrectAnswer: false,
             showLeaderboard: false
         });
@@ -505,9 +507,16 @@ export default function PresenterLiveView() {
                                     </div>
 
                                     {/* Question title */}
-                                    <h2 className={`text-3xl sm:text-4xl font-bold text-center mb-10 leading-snug ${showCorrectAnswer ? 'opacity-50' : ''}`}>
-                                        {currentQ.title}
-                                    </h2>
+                                    <div className="relative mb-10">
+                                        {currentQ.doublePoints && (
+                                            <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-black text-sm px-4 py-1 rounded-full shadow-lg border border-orange-300/50 flex items-center gap-1.5 animate-bounce">
+                                                🔥 X2 ĐIỂM
+                                            </div>
+                                        )}
+                                        <h2 className={`text-3xl sm:text-4xl font-bold text-center leading-snug ${showCorrectAnswer ? 'opacity-50' : ''} ${currentQ.doublePoints ? 'pt-4' : ''}`}>
+                                            {currentQ.title}
+                                        </h2>
+                                    </div>
 
                                     {currentQ.type === 'SLIDE' ? (
                                         <SlideDisplay
