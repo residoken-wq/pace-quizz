@@ -40,6 +40,7 @@ type Session = {
     status: string;
     questions: Question[];
     participants: any[];
+    audioUrl?: string;
 };
 
 function getApiUrl() {
@@ -71,6 +72,10 @@ export default function PresenterLiveView() {
     const [showCorrectAnswer, setShowCorrectAnswer] = useState(false);
     const [showLeaderboard, setShowLeaderboard] = useState(false);
     const [leaderboard, setLeaderboard] = useState<any[]>([]);
+
+    // Audio states
+    const audioRef = useRef<HTMLAudioElement>(null);
+    const [isMuted, setIsMuted] = useState(false);
 
     // Theme state
     const [theme, setTheme] = useState<'dark' | 'light'>('dark');
@@ -200,6 +205,9 @@ export default function PresenterLiveView() {
                 questionId: 'reset',
                 status: 'CREATED'
             });
+            if (session?.audioUrl && audioRef.current) {
+                audioRef.current.play().catch(e => console.log('Audio autoplay blocked', e));
+            }
         }
     };
 
@@ -421,9 +429,22 @@ export default function PresenterLiveView() {
                         <span className="font-bold text-lg">{participantsCount}</span>
                     </div>
 
-                    <button onClick={toggleTheme} className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${isDark ? 'bg-white/5 hover:bg-white/10 text-white/80 hover:text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900'}`} title="Toggle Theme">
-                        {isDark ? <Sun size={18} /> : <Moon size={18} />}
+                    <button 
+                        onClick={() => setTheme(isDark ? 'light' : 'dark')}
+                        className={`p-2 rounded-xl transition-colors ${isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white' : 'bg-slate-200 text-slate-600 hover:bg-slate-300 hover:text-slate-900'}`}
+                        title="Đổi giao diện"
+                    >
+                        {isDark ? <Sun size={20} /> : <Moon size={20} />}
                     </button>
+                    {session?.audioUrl && (
+                        <button 
+                            onClick={() => setIsMuted(!isMuted)}
+                            className={`p-2 rounded-xl transition-colors ${isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white' : 'bg-slate-200 text-slate-600 hover:bg-slate-300 hover:text-slate-900'}`}
+                            title={isMuted ? 'Mở âm thanh' : 'Tắt âm thanh'}
+                        >
+                            {isMuted ? '🔇' : '🔊'}
+                        </button>
+                    )}
 
                     <button onClick={fetchHistory} className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${isDark ? 'bg-white/5 hover:bg-white/10 text-white/50 hover:text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-900'}`} title="Activity Logs">
                         <History size={18} />
@@ -749,6 +770,16 @@ export default function PresenterLiveView() {
                         )}
                     </div>
                 </div>
+            )}
+            {/* Audio Settings */}
+            {session?.audioUrl && (
+                <audio 
+                    ref={audioRef} 
+                    src={`${getApiUrl()}${session.audioUrl}`} 
+                    loop 
+                    muted={isMuted} 
+                    className="hidden" 
+                />
             )}
         </div>
     );

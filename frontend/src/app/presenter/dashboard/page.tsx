@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Play, Trash2, Edit, LogOut, BarChart3, AlertCircle } from 'lucide-react';
+import { Plus, Play, Trash2, Edit, LogOut, BarChart3, AlertCircle, Search, LayoutGrid, List as ListIcon, Clock, Type } from 'lucide-react';
 
 type Session = {
     id: string;
@@ -30,6 +30,9 @@ export default function PresenterDashboard() {
     const [newSessionType, setNewSessionType] = useState<'LIVE' | 'SURVEY'>('LIVE');
     const [creating, setCreating] = useState(false);
     const [error, setError] = useState('');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [sortBy, setSortBy] = useState('newest');
+    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const router = useRouter();
 
     const fetchSessions = async () => {
@@ -110,6 +113,16 @@ export default function PresenterDashboard() {
         FINISHED: 'bg-gray-100 text-gray-600',
     };
 
+    const filteredSessions = sessions
+        .filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()))
+        .sort((a, b) => {
+            if (sortBy === 'newest') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            if (sortBy === 'oldest') return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+            if (sortBy === 'name_asc') return a.name.localeCompare(b.name);
+            if (sortBy === 'name_desc') return b.name.localeCompare(a.name);
+            return 0;
+        });
+
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col font-sans text-gray-900">
             <header className="bg-white border-b border-gray-200 px-8 py-4 flex justify-between items-center">
@@ -122,7 +135,7 @@ export default function PresenterDashboard() {
             </header>
 
             <main className="flex-1 w-full max-w-5xl mx-auto p-8">
-                <div className="flex justify-between items-center mb-8">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
                     <h2 className="text-3xl font-bold">My Sessions</h2>
                     <button
                         onClick={() => setShowCreateModal(true)}
@@ -130,6 +143,49 @@ export default function PresenterDashboard() {
                     >
                         <Plus size={20} /> New Session
                     </button>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-4 mb-8">
+                    <div className="relative flex-1">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <Search size={18} className="text-gray-400" />
+                        </div>
+                        <input
+                            type="text"
+                            placeholder="Tìm kiếm session..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
+                        />
+                    </div>
+                    <div className="flex gap-2">
+                        <select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                            className="block w-full pl-3 pr-10 py-2.5 text-sm border border-gray-200 rounded-xl leading-5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all cursor-pointer"
+                        >
+                            <option value="newest">Mới nhất trước</option>
+                            <option value="oldest">Cũ nhất trước</option>
+                            <option value="name_asc">Tên (A-Z)</option>
+                            <option value="name_desc">Tên (Z-A)</option>
+                        </select>
+                        <div className="flex bg-gray-100 p-1 rounded-xl">
+                            <button
+                                onClick={() => setViewMode('grid')}
+                                className={`p-1.5 rounded-lg transition-colors ${viewMode === 'grid' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                                title="Grid View"
+                            >
+                                <LayoutGrid size={18} />
+                            </button>
+                            <button
+                                onClick={() => setViewMode('list')}
+                                className={`p-1.5 rounded-lg transition-colors ${viewMode === 'list' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                                title="List View"
+                            >
+                                <ListIcon size={18} />
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 {isLoading ? (
@@ -148,38 +204,59 @@ export default function PresenterDashboard() {
                             <Plus size={18} className="inline mr-2" /> Create Session
                         </button>
                     </div>
+                ) : filteredSessions.length === 0 ? (
+                    <div className="text-center py-20 bg-white rounded-3xl border border-gray-100 shadow-sm">
+                        <Search size={48} className="mx-auto text-gray-200 mb-4" />
+                        <h3 className="text-xl font-bold text-gray-400 mb-2">Không tìm thấy session nào</h3>
+                        <p className="text-gray-400 mb-6">Thử thay đổi từ khóa tìm kiếm</p>
+                    </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {sessions.map((session) => (
-                            <div key={session.id} className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 flex flex-col hover:shadow-md transition-shadow group">
-                                <div className="flex justify-between items-start mb-4">
-                                    <div className={`px-3 py-1 text-xs font-bold rounded-full ${statusColors[session.status] || 'bg-gray-100 text-gray-600'}`}>
+                    <div className={viewMode === 'grid' ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "flex flex-col gap-4"}>
+                        {filteredSessions.map((session) => (
+                            <div key={session.id} className={`bg-white rounded-2xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow group ${viewMode === 'list' ? 'flex flex-row items-center p-4 gap-6' : 'flex flex-col p-6'}`}>
+                                <div className={viewMode === 'list' ? 'flex-1 min-w-0 flex items-center gap-6' : 'flex justify-between items-start mb-4'}>
+                                    <div className={`px-3 py-1 text-xs font-bold rounded-full whitespace-nowrap ${statusColors[session.status] || 'bg-gray-100 text-gray-600'}`}>
                                         {session.status}
                                     </div>
-                                    <span className="text-xs font-medium text-gray-400 uppercase">{session.type}</span>
+                                    <span className={`text-xs font-medium text-gray-400 uppercase whitespace-nowrap ${viewMode === 'list' ? '' : ''}`}>{session.type}</span>
+                                    
+                                    {viewMode === 'list' && (
+                                        <div className="flex-1 min-w-0">
+                                            <h3 className="text-lg font-bold line-clamp-1">{session.name}</h3>
+                                            <div className="flex items-center gap-4 mt-1">
+                                                <p className="text-sm font-mono text-gray-500">PIN: <span className="font-bold text-gray-700">{session.pin}</span></p>
+                                                <p className="text-xs text-gray-400">{session.questions?.length || 0} questions</p>
+                                                <p className="text-xs text-gray-400 flex items-center gap-1"><Clock size={12}/> {new Date(session.createdAt).toLocaleDateString('vi-VN')}</p>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
-                                <h3 className="text-xl font-bold mb-2 line-clamp-2">{session.name}</h3>
-                                <p className="text-sm font-mono text-gray-500 mb-1">PIN: <span className="font-bold text-gray-700">{session.pin}</span></p>
-                                <p className="text-xs text-gray-400 mb-6">{session.questions?.length || 0} questions</p>
+                                {viewMode === 'grid' && (
+                                    <>
+                                        <h3 className="text-xl font-bold mb-2 line-clamp-2">{session.name}</h3>
+                                        <p className="text-sm font-mono text-gray-500 mb-1">PIN: <span className="font-bold text-gray-700">{session.pin}</span></p>
+                                        <p className="text-xs text-gray-400 mb-4">{session.questions?.length || 0} questions • <span className="inline-flex items-center gap-1"><Clock size={10}/> {new Date(session.createdAt).toLocaleDateString('vi-VN')}</span></p>
+                                    </>
+                                )}
 
-                                <div className="mt-auto pt-4 border-t border-gray-100 space-y-2">
+                                <div className={viewMode === 'list' ? 'flex items-center gap-2' : 'mt-auto pt-4 border-t border-gray-100 space-y-2'}>
                                     <button
                                         onClick={() => router.push(`/presenter/${session.id}`)}
-                                        className="w-full bg-black hover:bg-gray-800 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors"
+                                        className={`${viewMode === 'list' ? 'px-4 py-2' : 'w-full py-3'} bg-black hover:bg-gray-800 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-colors`}
                                     >
-                                        <Play size={18} /> Present Now
+                                        <Play size={16} /> {viewMode === 'list' ? 'Present' : 'Present Now'}
                                     </button>
-                                    <div className="flex gap-2">
+                                    <div className={`flex gap-2 ${viewMode === 'list' ? '' : 'w-full'}`}>
                                         <button
                                             onClick={() => router.push(`/presenter/edit/${session.id}`)}
-                                            className="flex-1 bg-white hover:bg-gray-50 text-gray-700 border-2 border-gray-200 py-2.5 rounded-xl font-bold transition-colors flex items-center justify-center gap-2"
+                                            className={`${viewMode === 'list' ? 'px-4 py-2' : 'flex-1 py-2.5'} bg-white hover:bg-gray-50 text-gray-700 border-2 border-gray-200 rounded-xl font-bold transition-colors flex items-center justify-center gap-2`}
                                         >
-                                            <Edit size={16} /> Edit
+                                            <Edit size={16} /> {viewMode === 'grid' && 'Edit'}
                                         </button>
                                         <button
                                             onClick={() => handleDeleteSession(session.id)}
-                                            className="px-4 bg-white hover:bg-red-50 text-gray-400 hover:text-red-600 border-2 border-gray-200 hover:border-red-200 py-2.5 rounded-xl font-bold transition-colors"
+                                            className={`${viewMode === 'list' ? 'px-3 py-2' : 'px-4 py-2.5'} bg-white hover:bg-red-50 text-gray-400 hover:text-red-600 border-2 border-gray-200 hover:border-red-200 rounded-xl font-bold transition-colors flex items-center justify-center`}
                                         >
                                             <Trash2 size={16} />
                                         </button>

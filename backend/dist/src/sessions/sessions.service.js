@@ -234,7 +234,9 @@ let SessionsService = class SessionsService {
                 const qOptions = r.question.options || [];
                 const answer = r.answer;
                 const chosenOption = qOptions.find(opt => opt.id === answer?.optionId);
-                if (chosenOption && chosenOption.isCorrect) {
+                const isPoll = r.question.type === 'POLL';
+                const isCorrectChoice = chosenOption && chosenOption.isCorrect;
+                if (isPoll || isCorrectChoice) {
                     const pointsMultiplier = r.question.doublePoints ? 2 : 1;
                     correctAnswers += pointsMultiplier;
                 }

@@ -156,8 +156,8 @@ export default function ParticipantScreen() {
                 setHasJoined(true);
                 setQStartTime(Date.now()); // For the first question if it's already active
                 
-                // Attempt to play audio for survey if exists
-                if (sessionData?.type === 'SURVEY' && sessionData?.audioUrl && audioRef.current) {
+                // Attempt to play audio for survey or live if exists
+                if (sessionData?.audioUrl && audioRef.current) {
                     audioRef.current.play().catch(e => console.log('Audio autoplay blocked', e));
                 }
             } else {
@@ -643,7 +643,7 @@ export default function ParticipantScreen() {
                 <div className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] rounded-full bg-emerald-500/20 blur-[120px] animate-pulse" style={{ animationDelay: '2s' }}></div>
             </div>
 
-            {sessionData?.type === 'SURVEY' && sessionData?.audioUrl && (
+            {sessionData?.audioUrl && (
                 <audio 
                     ref={audioRef} 
                     src={`${getApiUrl()}${sessionData.audioUrl}`} 
@@ -670,7 +670,7 @@ export default function ParticipantScreen() {
                             </span>
                         </div>
                     )}
-                    {hasJoined && sessionData?.type === 'SURVEY' && sessionData?.audioUrl && (
+                    {hasJoined && sessionData?.audioUrl && (
                         <button 
                             onClick={() => setIsMuted(!isMuted)}
                             className="w-10 h-10 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-all shadow-lg border border-white/20"

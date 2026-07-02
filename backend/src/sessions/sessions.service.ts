@@ -265,9 +265,12 @@ export class SessionsService {
         const qOptions = (r.question.options as any[]) || [];
         const answer = r.answer as any;
 
-        // Find if the chosen option is marked as correct
+        // For MULTIPLE_CHOICE, check if chosen option is correct. For POLL, participating counts as correct.
         const chosenOption = qOptions.find(opt => opt.id === answer?.optionId);
-        if (chosenOption && chosenOption.isCorrect) {
+        const isPoll = r.question.type === 'POLL';
+        const isCorrectChoice = chosenOption && chosenOption.isCorrect;
+        
+        if (isPoll || isCorrectChoice) {
           const pointsMultiplier = r.question.doublePoints ? 2 : 1;
           correctAnswers += pointsMultiplier;
         }

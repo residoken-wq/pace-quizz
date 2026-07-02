@@ -439,69 +439,76 @@ export default function SessionEditor() {
                                         placeholder="Cảm ơn bạn đã tham gia..."
                                     />
                                 </div>
-                                <div>
-                                    <label className="text-xs font-semibold text-slate-600 mb-1 block">Âm thanh nền (MP3 ≤10MB)</label>
-                                    <div className="flex flex-col gap-2">
-                                        {session?.audioUrl && (
-                                            <div className="flex items-center justify-between bg-white border border-slate-200 rounded-lg p-2">
-                                                <audio controls src={`${getApiUrl()}${session.audioUrl}`} className="h-8 max-w-[200px]" />
-                                                <button
-                                                    onClick={async () => {
-                                                        setSession(prev => prev ? { ...prev, audioUrl: undefined } : prev);
-                                                        await fetch(`${getApiUrl()}/sessions/${sessionId}`, {
-                                                            method: 'PATCH',
-                                                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
-                                                            body: JSON.stringify({ audioUrl: null }),
-                                                        });
-                                                    }}
-                                                    className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                                    title="Xóa âm thanh"
-                                                >
-                                                    <Trash2 size={14} />
-                                                </button>
-                                            </div>
-                                        )}
-                                        <label className="cursor-pointer block">
-                                            <input
-                                                type="file"
-                                                className="hidden"
-                                                accept="audio/mpeg,audio/mp3,audio/wav"
-                                                onChange={async (e) => {
-                                                    const file = e.target.files?.[0];
-                                                    if (!file) return;
-                                                    if (file.size > 10 * 1024 * 1024) {
-                                                        alert('File quá lớn. Vui lòng chọn file <= 10MB');
-                                                        return;
-                                                    }
-                                                    const formData = new FormData();
-                                                    formData.append('file', file);
-                                                    try {
-                                                        const res = await fetch(`${getApiUrl()}/upload`, {
-                                                            method: 'POST',
-                                                            headers: { 'Authorization': `Bearer ${getToken()}` },
-                                                            body: formData,
-                                                        });
-                                                        if (res.ok) {
-                                                            const data = await res.json();
-                                                            setSession(prev => prev ? { ...prev, audioUrl: data.url } : prev);
-                                                            await fetch(`${getApiUrl()}/sessions/${sessionId}`, {
-                                                                method: 'PATCH',
-                                                                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
-                                                                body: JSON.stringify({ audioUrl: data.url }),
-                                                            });
-                                                        }
-                                                    } catch (err) { console.error('Upload failed', err); }
-                                                }}
-                                            />
-                                            <div className="w-full h-10 rounded-lg border-2 border-dashed border-emerald-200 bg-white flex items-center justify-center text-emerald-500 hover:bg-emerald-50 transition-colors">
-                                                <span className="text-xs font-semibold flex items-center gap-1"><Plus size={14} /> Chọn file Audio</span>
-                                            </div>
-                                        </label>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     )}
+                    
+                    {/* Audio Settings (All types) */}
+                    <div className="p-4 border-t border-slate-100 bg-blue-50/30">
+                        <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-2.5 flex items-center gap-1.5">
+                            <Sparkles size={12} /> Cài đặt Âm thanh nền
+                        </p>
+                        <div>
+                            <label className="text-xs font-semibold text-slate-600 mb-1 block">MP3 ≤10MB</label>
+                            <div className="flex flex-col gap-2">
+                                {session?.audioUrl && (
+                                    <div className="flex items-center justify-between bg-white border border-slate-200 rounded-lg p-2">
+                                        <audio controls src={`${getApiUrl()}${session.audioUrl}`} className="h-8 max-w-[200px]" />
+                                        <button
+                                            onClick={async () => {
+                                                setSession(prev => prev ? { ...prev, audioUrl: undefined } : prev);
+                                                await fetch(`${getApiUrl()}/sessions/${sessionId}`, {
+                                                    method: 'PATCH',
+                                                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
+                                                    body: JSON.stringify({ audioUrl: null }),
+                                                });
+                                            }}
+                                            className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                            title="Xóa âm thanh"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </div>
+                                )}
+                                <label className="cursor-pointer block">
+                                    <input
+                                        type="file"
+                                        className="hidden"
+                                        accept="audio/mpeg,audio/mp3,audio/wav"
+                                        onChange={async (e) => {
+                                            const file = e.target.files?.[0];
+                                            if (!file) return;
+                                            if (file.size > 10 * 1024 * 1024) {
+                                                alert('File quá lớn. Vui lòng chọn file <= 10MB');
+                                                return;
+                                            }
+                                            const formData = new FormData();
+                                            formData.append('file', file);
+                                            try {
+                                                const res = await fetch(`${getApiUrl()}/upload`, {
+                                                    method: 'POST',
+                                                    headers: { 'Authorization': `Bearer ${getToken()}` },
+                                                    body: formData,
+                                                });
+                                                if (res.ok) {
+                                                    const data = await res.json();
+                                                    setSession(prev => prev ? { ...prev, audioUrl: data.url } : prev);
+                                                    await fetch(`${getApiUrl()}/sessions/${sessionId}`, {
+                                                        method: 'PATCH',
+                                                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
+                                                        body: JSON.stringify({ audioUrl: data.url }),
+                                                    });
+                                                }
+                                            } catch (err) { console.error('Upload failed', err); }
+                                        }}
+                                    />
+                                    <div className="w-full h-10 rounded-lg border-2 border-dashed border-blue-200 bg-white flex items-center justify-center text-blue-500 hover:bg-blue-50 transition-colors">
+                                        <span className="text-xs font-semibold flex items-center gap-1"><Plus size={14} /> Chọn file Audio</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
                 </aside>
 
                 {/* ─── Right: Question Editor ─── */}
@@ -688,7 +695,7 @@ export default function SessionEditor() {
                             </div>
                             
                             {/* Gamification Settings */}
-                            {selectedQuestion.type === 'MULTIPLE_CHOICE' && (
+                            {(selectedQuestion.type === 'MULTIPLE_CHOICE' || selectedQuestion.type === 'POLL') && (
                                 <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow">
                                     <div className="flex items-center gap-2.5 mb-3">
                                         <span className="text-lg">🎮</span>
