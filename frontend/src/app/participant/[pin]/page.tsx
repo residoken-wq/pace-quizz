@@ -150,9 +150,13 @@ export default function ParticipantScreen() {
                 setParticipantId(data.id);
                 setHasJoined(true);
                 setQStartTime(Date.now()); // For the first question if it's already active
+            } else {
+                const errData = await res.json().catch(() => ({}));
+                alert(`Lỗi tham gia: ${errData.message || res.statusText || 'Không xác định'}`);
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error('Failed to join:', err);
+            alert(`Lỗi kết nối mạng hoặc API: ${err.message || 'Vui lòng kiểm tra lại đường truyền/SSL'}`);
         } finally {
             setIsJoining(false);
         }
