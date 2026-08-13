@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useSocket } from '@/context/SocketProvider';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, CheckCircle2, Presentation } from 'lucide-react';
+import { Loader2, CheckCircle2, Presentation, Clock3, LockKeyhole } from 'lucide-react';
 
 type QuestionType = 'MULTIPLE_CHOICE' | 'WORD_CLOUD' | 'RATING_SCALE' | 'POLL' | 'SLIDE';
 
@@ -19,6 +19,8 @@ interface QuestionState {
     leaderboard?: any[];
     timeLimit?: number;
     doublePoints?: boolean;
+    acceptingAnswers?: boolean;
+    endsAt?: number;
 };
 
 const MASCOTS = ['🐶', '🐱', '🦊', '🐼', '🐨', '🐯', '🐰', '🐸', '🦄', '🦖', '🐙', '👾'];
@@ -63,15 +65,21 @@ export default function ParticipantScreen() {
     const audioRef = useRef<HTMLAudioElement>(null);
     const [isMuted, setIsMuted] = useState(false);
 
-    // Timer countdown effect
+    const isTimedQuestion = Boolean(liveState.timeLimit && liveState.timeLimit > 0);
+    const isAnswerLocked = liveState.acceptingAnswers === false || (isTimedQuestion && timer <= 0);
+
+    // Use the shared deadline instead of decrementing a local counter. This avoids
+    // timer drift when the tab is backgrounded or the participant joins mid-question.
     useEffect(() => {
-        if (liveState.status === 'ACTIVE' && liveState.timeLimit && liveState.timeLimit > 0 && timer > 0) {
-            const interval = setInterval(() => {
-                setTimer(prev => (prev > 0 ? prev - 1 : 0));
-            }, 1000);
-            return () => clearInterval(interval);
-        }
-    }, [liveState.status, liveState.timeLimit, timer]);
+        if (liveState.status !== 'ACTIVE' || !isTimedQuestion || !liveState.endsAt) return;
+
+        const updateTimer = () => {
+            setTimer(Math.max(0, Math.ceil((liveState.endsAt! - Date.now()) / 1000)));
+        };
+        updateTimer();
+        const interval = setInterval(updateTimer, 250);
+        return () => clearInterval(interval);
+    }, [liveState.status, liveState.endsAt, isTimedQuestion]);
 
     useEffect(() => {
         const fetchInitialData = async () => {
@@ -125,7 +133,8 @@ export default function ParticipantScreen() {
                         setLiveTextAnswer('');
                         setQStartTime(Date.now()); // reset timer for new question
                         if (data.timeLimit && data.timeLimit > 0) {
-                            setTimer(data.timeLimit);
+                            const endsAt = data.endsAt || Date.now() + data.timeLimit * 1000;
+                            setTimer(Math.max(0, Math.ceil((endsAt - Date.now()) / 1000)));
                         } else {
                             setTimer(0);
                         }
@@ -192,7 +201,7 @@ export default function ParticipantScreen() {
     };
 
     const handleLiveVote = async (optionId?: string, text?: string) => {
-        if (!socket || !liveState.id) return;
+        if (!socket || !liveState.id || isAnswerLocked || selectedLiveOption !== null) return;
 
         if (optionId) setSelectedLiveOption(optionId);
 
@@ -343,20 +352,27 @@ export default function ParticipantScreen() {
             exit={{ opacity: 0, x: -20 }}
             className="flex flex-col flex-1 w-full max-w-md mx-auto py-4 sm:py-6"
         >
-            {/* Timer Bar */}
+            {/* Timer / answer state */}
             {liveState.timeLimit && liveState.timeLimit > 0 ? (
-                <div className="w-full bg-white/10 rounded-full h-3 mb-6 relative overflow-hidden backdrop-blur-sm self-start shadow-sm border border-white/10">
-                    <div
-                        className={`absolute left-0 top-0 h-full rounded-full transition-all duration-1000 ease-linear ${timer <= 5 ? 'bg-red-500' : timer <= 10 ? 'bg-amber-400' : 'bg-indigo-400'}`}
-                        style={{ width: `${(timer / liveState.timeLimit) * 100}%` }}
-                    />
-                    <div className="absolute inset-0 flex items-center justify-center text-[10px] font-black text-white mix-blend-difference drop-shadow-md">
-                        {timer}s
+                <div className={`mb-5 rounded-2xl border p-3 backdrop-blur-xl transition-colors ${isAnswerLocked ? 'border-rose-400/40 bg-rose-500/15' : 'border-white/15 bg-white/10'}`}>
+                    <div className="mb-2 flex items-center justify-between text-sm font-extrabold text-white">
+                        <span className="flex items-center gap-2">
+                            {isAnswerLocked ? <LockKeyhole size={16} /> : <Clock3 size={16} />}
+                            {isAnswerLocked ? 'Đã hết thời gian' : 'Thời gian trả lời'}
+                        </span>
+                        <span className={`tabular-nums ${timer <= 5 ? 'text-rose-300' : 'text-white'}`}>{timer}s</span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-black/25">
+                        <div
+                            className={`h-full rounded-full transition-[width] duration-300 ease-linear ${timer <= 5 ? 'bg-rose-400' : timer <= 10 ? 'bg-amber-300' : 'bg-cyan-300'}`}
+                            style={{ width: `${Math.min(100, (timer / liveState.timeLimit) * 100)}%` }}
+                        />
                     </div>
                 </div>
             ) : null}
 
-            <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-6 md:p-8 shadow-2xl border border-white/20 flex-1 flex flex-col justify-center relative">
+            <div className="bg-slate-950/65 backdrop-blur-2xl rounded-[2rem] p-6 md:p-8 shadow-[0_24px_80px_rgba(0,0,0,0.35)] border border-white/15 flex-1 flex flex-col justify-center relative overflow-hidden">
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent" />
                 {liveState.doublePoints && (
                     <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-black text-sm px-4 py-1.5 rounded-full shadow-lg border border-orange-300/50 flex items-center gap-1.5 animate-bounce">
                         🔥 X2 ĐIỂM
@@ -383,7 +399,7 @@ export default function ParticipantScreen() {
                             type="text"
                             value={liveTextAnswer}
                             onChange={(e) => setLiveTextAnswer(e.target.value)}
-                            disabled={selectedLiveOption !== null || liveState.showCorrectAnswer}
+                            disabled={selectedLiveOption !== null || liveState.showCorrectAnswer || isAnswerLocked}
                             placeholder="Nhập câu trả lời của bạn..."
                             className="w-full text-lg p-5 rounded-2xl border-2 border-white/20 bg-white/10 text-white placeholder-white/50 focus:border-indigo-400 focus:bg-white/20 outline-none transition-all text-center font-semibold"
                             maxLength={30}
@@ -395,10 +411,10 @@ export default function ParticipantScreen() {
                                     handleLiveVote(undefined, liveTextAnswer);
                                 }
                             }}
-                            disabled={!liveTextAnswer.trim() || selectedLiveOption !== null || liveState.showCorrectAnswer}
+                            disabled={!liveTextAnswer.trim() || selectedLiveOption !== null || liveState.showCorrectAnswer || isAnswerLocked}
                             className="w-full py-4 rounded-xl font-bold text-white bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg active:scale-95"
                         >
-                            {selectedLiveOption !== null ? 'Đã gửi' : 'Gửi đáp án'}
+                            {isAnswerLocked ? 'Đã hết thời gian' : selectedLiveOption !== null ? 'Đã gửi' : 'Gửi đáp án'}
                         </button>
                     </div>
                 ) : liveState.type === 'RATING_SCALE' ? (
@@ -418,10 +434,10 @@ export default function ParticipantScreen() {
                                                     setSelectedLiveOption(String(val));
                                                     handleLiveVote(undefined, String(val));
                                                 }}
-                                                disabled={selectedLiveOption !== null}
+                                                disabled={selectedLiveOption !== null || isAnswerLocked}
                                                 className={`w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-black transition-all duration-300 transform active:scale-[0.9] ${isSelected
                                                     ? 'bg-amber-500 text-white shadow-lg ring-4 ring-amber-500/30 scale-110'
-                                                    : selectedLiveOption !== null
+                                                    : selectedLiveOption !== null || isAnswerLocked
                                                         ? 'bg-white/5 text-white/30 cursor-not-allowed'
                                                         : 'bg-white/10 text-white border-2 border-white/20 hover:bg-amber-500/20 hover:border-amber-400/50 hover:scale-110'
                                                     }`}
@@ -446,7 +462,7 @@ export default function ParticipantScreen() {
 
                             let btnClass = isSelected
                                 ? 'border-indigo-400 bg-indigo-500/90 text-white shadow-lg ring-4 ring-indigo-500/30'
-                                : selectedLiveOption !== null
+                                : selectedLiveOption !== null || isAnswerLocked
                                     ? 'border-white/10 bg-white/5 text-white/50 cursor-not-allowed'
                                     : 'border-white/20 bg-white/10 text-white hover:bg-white/20 hover:border-white/40';
 
@@ -471,7 +487,7 @@ export default function ParticipantScreen() {
                                 <button
                                     key={option.id || idx}
                                     onClick={() => handleLiveVote(option.id)}
-                                    disabled={selectedLiveOption !== null || reveal}
+                                    disabled={selectedLiveOption !== null || reveal || isAnswerLocked}
                                     className={`w-full p-4 sm:p-5 text-left rounded-2xl border-2 transition-all duration-300 transform active:scale-[0.98] ${btnClass}`}
                                 >
                                     <div className="flex justify-between items-center relative">
@@ -483,6 +499,11 @@ export default function ParticipantScreen() {
                                 </button>
                             );
                         })}
+                    </div>
+                )}
+                {isAnswerLocked && liveState.type !== 'SLIDE' && !liveState.showCorrectAnswer && (
+                    <div className="mt-5 flex items-center justify-center gap-2 rounded-2xl border border-rose-400/30 bg-rose-500/10 px-4 py-3 text-sm font-bold text-rose-100">
+                        <LockKeyhole size={17} /> Đáp án đã được khóa. Vui lòng chờ câu tiếp theo.
                     </div>
                 )}
             </div>
@@ -637,7 +658,7 @@ export default function ParticipantScreen() {
     }
 
     return (
-        <div className="min-h-screen bg-slate-900 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] flex flex-col pt-6 sm:pt-12 p-4 relative overflow-hidden font-sans">
+        <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,#1e3a5f_0%,#0f172a_38%,#020617_100%)] flex flex-col pt-6 sm:pt-10 p-4 relative overflow-hidden font-sans">
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
                 <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-indigo-500/20 blur-[100px] animate-pulse"></div>
                 <div className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] rounded-full bg-emerald-500/20 blur-[120px] animate-pulse" style={{ animationDelay: '2s' }}></div>

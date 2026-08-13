@@ -9,7 +9,7 @@ import {
 import {
     Users, Play, Square, ChevronRight, ChevronLeft, QrCode, RotateCcw,
     Wifi, WifiOff, Clock, CheckCircle2, History, ArrowLeft, Loader2,
-    AlertTriangle, Sun, Moon, Trophy, Eye, Repeat, Timer
+    AlertTriangle, Sun, Moon, Trophy, Eye, Repeat, Timer, LockKeyhole
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -161,16 +161,30 @@ export default function PresenterLiveView() {
         return () => { if (timerRef.current) clearInterval(timerRef.current); };
     }, []);
 
-    const startTimer = useCallback((seconds: number) => {
+    const closeQuestion = useCallback((questionId: string) => {
+        if (!socket || !session) return;
+        socket.emit('host_state_update', {
+            sessionId: session.pin,
+            questionId,
+            status: 'ACTIVE',
+            acceptingAnswers: false,
+        });
+    }, [socket, session]);
+
+    const startTimer = useCallback((seconds: number, questionId: string) => {
         if (timerRef.current) clearInterval(timerRef.current);
         setTimer(seconds);
         timerRef.current = setInterval(() => {
             setTimer(prev => {
-                if (prev <= 1) { if (timerRef.current) clearInterval(timerRef.current); return 0; }
+                if (prev <= 1) {
+                    if (timerRef.current) clearInterval(timerRef.current);
+                    closeQuestion(questionId);
+                    return 0;
+                }
                 return prev - 1;
             });
         }, 1000);
-    }, []);
+    }, [closeQuestion]);
 
     // ─── Actions ───
     const handleStart = async () => {
@@ -215,6 +229,7 @@ export default function PresenterLiveView() {
         if (!socket || !session) return;
         const q = session.questions[idx];
         if (!q) return;
+        const endsAt = q.timeLimit && q.timeLimit > 0 ? Date.now() + q.timeLimit * 1000 : undefined;
         socket.emit('host_state_update', {
             sessionId: session.pin,
             questionId: q.id,
@@ -224,10 +239,12 @@ export default function PresenterLiveView() {
             status: 'ACTIVE',
             timeLimit: q.timeLimit || 0,
             doublePoints: q.doublePoints || false,
+            acceptingAnswers: true,
+            endsAt,
             showCorrectAnswer: false,
             showLeaderboard: false
         });
-        if (q.timeLimit && q.timeLimit > 0) startTimer(q.timeLimit);
+        if (q.timeLimit && q.timeLimit > 0) startTimer(q.timeLimit, q.id);
         else setTimer(0);
     };
 
@@ -513,13 +530,13 @@ export default function PresenterLiveView() {
                                 >
                                     {/* Question number + timer */}
                                     <div className="flex items-center justify-between mb-6">
-                                        <span className="text-sm font-bold text-indigo-500 bg-indigo-500/10 dark:bg-indigo-500/20 px-3 py-1 rounded-lg border border-indigo-500/20">
-                                            Câu {currentQIdx + 1} / {questions.length}
+                                        <span className={`inline-flex items-center rounded-xl border px-4 py-2 text-base font-black tracking-wide shadow-lg ${isDark ? 'border-violet-300/50 bg-white text-violet-800 shadow-violet-950/30' : 'border-violet-200 bg-violet-700 text-white shadow-violet-200'}`}>
+                                            Câu&nbsp;<span className="text-xl tabular-nums">{currentQIdx + 1}</span>&nbsp;/ {questions.length}
                                         </span>
-                                        {timer > 0 && (
-                                            <div className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-lg border ${timer <= 5 ? 'bg-red-500/10 text-red-500 border-red-500/30 animate-pulse' : isDark ? 'bg-white/5 text-white/70 border-white/10' : 'bg-slate-100 text-slate-700 border-slate-200'}`}>
-                                                <Clock size={18} />
-                                                {timer}s
+                                        {currentQ.timeLimit && currentQ.timeLimit > 0 && (
+                                            <div className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-lg border ${timer === 0 ? 'bg-rose-500 text-white border-rose-300' : timer <= 5 ? 'bg-red-500/15 text-red-400 border-red-500/40 animate-pulse' : isDark ? 'bg-white/10 text-white border-white/20' : 'bg-slate-100 text-slate-800 border-slate-300'}`}>
+                                                {timer === 0 ? <LockKeyhole size={18} /> : <Clock size={18} />}
+                                                {timer === 0 ? 'Đã khóa đáp án' : `${timer}s`}
                                             </div>
                                         )}
                                         <span className={`text-xs font-semibold ${secondaryTextClass}`}>
